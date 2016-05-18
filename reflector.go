@@ -112,11 +112,19 @@ func (of *ObjField) Name() string {
 }
 
 func (of *ObjField) Kind() reflect.Kind {
-	return reflect.Invalid
+	ty, err := of.Type()
+	if err != nil {
+		return reflect.Invalid
+	}
+	return ty.Kind()
 }
 
-func (of *ObjField) Type() reflect.Type {
-	return nil
+func (of *ObjField) Type() (reflect.Type, error) {
+	value, err := of.Get()
+	if err != nil {
+		return nil, fmt.Errorf("Invalid field %s", of.name)
+	}
+	return reflect.TypeOf(value), nil
 }
 
 func (of *ObjField) Valid() bool {
@@ -161,7 +169,18 @@ func (of *ObjField) Get() (interface{}, error) {
 		return nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
 	}
 
-	value := reflect.ValueOf(of.obj.obj).FieldByName(of.name).Interface()
+	var field reflect.Value
+	if ptrStrct {
+		field = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
+	} else {
+		field = reflect.ValueOf(of.obj.obj).FieldByName(of.name)
+	}
+
+	if !field.IsValid() {
+		return nil, fmt.Errorf("Invalid field %s", of.name)
+	}
+
+	value := field.Interface()
 	return value, nil
 }
 

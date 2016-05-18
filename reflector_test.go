@@ -2,6 +2,7 @@ package reflector
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,20 @@ func TestListFieldsFlattened(t *testing.T) {
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Street")
 	assert.Equal(t, fields[2].Name(), "Number")
+
+	kind := obj.Field("Name").Kind()
+	assert.Equal(t, reflect.String, kind)
+
+	kind = obj.Field("BuName").Kind()
+	assert.Equal(t, reflect.Invalid, kind)
+
+	ty, err := obj.Field("Number").Type()
+	assert.Nil(t, err)
+	assert.Equal(t, reflect.TypeOf(1), ty)
+
+	ty, err = obj.Field("Istra").Type()
+	assert.NotNil(t, err)
+	assert.Nil(t, ty)
 }
 
 func TestListFields(t *testing.T) {
@@ -52,6 +67,20 @@ func TestListFieldsOnPointer(t *testing.T) {
 	assert.Equal(t, len(fields), 2)
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Address")
+
+	kind := obj.Field("Name").Kind()
+	assert.Equal(t, reflect.String, kind)
+
+	kind = obj.Field("BuName").Kind()
+	assert.Equal(t, reflect.Invalid, kind)
+
+	ty, err := obj.Field("Number").Type()
+	assert.Nil(t, err)
+	assert.Equal(t, reflect.TypeOf(1), ty)
+
+	ty, err = obj.Field("Istra").Type()
+	assert.NotNil(t, err)
+	assert.Nil(t, ty)
 }
 
 func TestListFieldsFlattenedOnPointer(t *testing.T) {

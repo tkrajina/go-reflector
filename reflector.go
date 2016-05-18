@@ -89,12 +89,34 @@ type ObjField struct {
 	name string
 }
 
-func (of *ObjField) Set(value interface{}) error {
-	field, found := reflect.TypeOf(of.obj).FieldByName(of.name)
-	_ = field
-	if !found {
-		return fmt.Errorf("Cannot find %s", of.name)
+func (of *ObjField) Name() string {
+	return of.name
+}
+
+func (of *ObjField) Valid() bool {
+	ty := of.obj.Type()
+	if ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
 	}
+	if ty.Kind() != reflect.Struct {
+		return false
+	}
+	_, found := ty.FieldByName(of.name)
+	return found
+}
+
+func (of *ObjField) Set(value interface{}) error {
+	ty := of.obj.Type()
+	if ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
+	} else {
+		return fmt.Errorf("Cannot set %s because obj is not a pointer", of.name)
+	}
+	if ty.Kind() != reflect.Struct {
+		return fmt.Errorf("Cannot set %s because obj is not a struct", of.name)
+	}
+	v := reflect.ValueOf(value)
+	reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name).Set(v)
 	return nil
 }
 

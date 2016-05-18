@@ -91,8 +91,14 @@ func (o *Object) Method(name string) *ObjMethod {
 	return newObjMethod(o, name)
 }
 
-func (o Object) Methods() []ObjMethod {
-	return nil
+func (o *Object) Methods() []ObjMethod {
+	res := []ObjMethod{}
+	ty := o.Type()
+	for i := 0; i < ty.NumMethod(); i++ {
+		method := ty.Method(i)
+		res = append(res, *newObjMethod(o, method.Name))
+	}
+	return res
 }
 
 type ObjField struct {

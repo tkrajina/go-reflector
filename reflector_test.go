@@ -18,7 +18,13 @@ type Person struct {
 	Address
 }
 
+func (p Person) Add(a, b, c int) int     { return a + b + c }
+func (p *Person) Substract(a, b int) int { return a - b }
+
 type CustomType int
+
+func (ct CustomType) Method1()  {}
+func (ct *CustomType) Method2() {}
 
 func (p Person) Hi(name string) string {
 	return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
@@ -133,4 +139,23 @@ func TestSetField(t *testing.T) {
 	err := obj.Field("Street").Set("ulica")
 	assert.Nil(t, err)
 	assert.Equal(t, "ulica", p.Street)
+}
+
+func TestCustomTypeMethods(t *testing.T) {
+	assert.Equal(t, len(New(CustomType(1)).Methods()), 1)
+	ct := CustomType(1)
+	assert.Equal(t, len(New(&ct).Methods()), 2)
+}
+
+func TestMethods(t *testing.T) {
+	assert.Equal(t, len(New(Person{}).Methods()), 2)
+	assert.Equal(t, len(New(&Person{}).Methods()), 3)
+}
+
+func TestCallMethod(t *testing.T) {
+	obj := New(&Person{})
+	res, err := obj.Method("Add").Call([]interface{}{2, 3, 6})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0], 11)
 }

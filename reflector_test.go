@@ -23,41 +23,25 @@ func (p Person) Hi(name string) string {
 	return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
 }
 
+func TestListFieldsFlattened(t *testing.T) {
+	p := Person{}
+	obj := New(p)
+
+	fields := obj.FieldFlattened()
+	assert.Equal(t, len(fields), 3)
+	assert.Equal(t, fields[0].Name(), "Name")
+	assert.Equal(t, fields[1].Name(), "Street")
+	assert.Equal(t, fields[2].Name(), "Number")
+}
+
 func TestListFields(t *testing.T) {
 	p := Person{}
 	obj := New(p)
 
 	fields := obj.Fields()
-	assert.Equal(t, len(fields), 3)
+	assert.Equal(t, len(fields), 2)
 	assert.Equal(t, fields[0].Name(), "Name")
-	assert.Equal(t, fields[1].Name(), "Street")
-	assert.Equal(t, fields[2].Name(), "Number")
-
-	/*
-		for _, field := range obj.Fields() {
-		}
-
-		err := obj.Field("Address").Set("bu")
-		panicIfErr(err)
-
-		value, err := obj.Field("Address").Get()
-		panicIfErr(err)
-		fmt.Println("value %s", value)
-
-		res, err := obj.Method("Hi").Call([]interface{}{"John"})
-		panicIfErr(err)
-		fmt.Println("res=", res)
-
-		for _, field := range obj.Fields() {
-			fmt.Println("Field:", field)
-		}
-
-		for _, method := range obj.Methods() {
-			fmt.Println("Method:", method)
-		}
-
-		fmt.Println("%#v", obj)
-	*/
+	assert.Equal(t, fields[1].Name(), "Address")
 }
 
 func TestListFieldsOnPointer(t *testing.T) {
@@ -65,6 +49,16 @@ func TestListFieldsOnPointer(t *testing.T) {
 	obj := New(p)
 
 	fields := obj.Fields()
+	assert.Equal(t, len(fields), 2)
+	assert.Equal(t, fields[0].Name(), "Name")
+	assert.Equal(t, fields[1].Name(), "Address")
+}
+
+func TestListFieldsFlattenedOnPointer(t *testing.T) {
+	p := &Person{}
+	obj := New(p)
+
+	fields := obj.FieldFlattened()
 	assert.Equal(t, len(fields), 3)
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Street")

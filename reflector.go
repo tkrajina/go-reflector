@@ -34,10 +34,14 @@ func (o *Object) IsStructOrPtrToStructUnderlyingType() (bool, bool, reflect.Type
 }
 
 func (o *Object) Fields() []ObjField {
-	return o.fields(reflect.TypeOf(o.obj))
+	return o.fields(reflect.TypeOf(o.obj), false)
 }
 
-func (o *Object) fields(ty reflect.Type) []ObjField {
+func (o Object) FieldFlattened() []ObjField {
+	return o.fields(reflect.TypeOf(o.obj), true)
+}
+
+func (o *Object) fields(ty reflect.Type, flatten bool) []ObjField {
 	fields := make([]ObjField, 0)
 
 	if ty.Kind() == reflect.Ptr {
@@ -51,15 +55,13 @@ func (o *Object) fields(ty reflect.Type) []ObjField {
 	for i := 0; i < ty.NumField(); i++ {
 		field := ty.Field(i)
 
-		switch field.Type.Kind() {
-		case reflect.Struct:
-			if field.Anonymous && string(field.Name[0]) == strings.ToUpper(string(field.Name[0])) {
-				fields = append(fields, o.fields(field.Type)...)
+		k := field.Type.Kind()
+		if string(field.Name[0]) == strings.ToUpper(string(field.Name[0])) {
+			if flatten && k == reflect.Struct && field.Anonymous {
+				fields = append(fields, o.fields(field.Type, flatten)...)
 			} else {
-				fields = append(fields, ObjField{obj: o, name: field.Name})
+				fields = append(fields, *newObjField(o, field.Name))
 			}
-		default:
-			fields = append(fields, ObjField{obj: o, name: field.Name})
 		}
 	}
 
@@ -85,12 +87,8 @@ func (o Object) Kind() reflect.Kind {
 	return o.Type().Kind()
 }
 
-func (o Object) FieldsDeep() []ObjField {
-	return nil
-}
-
-func (o Object) Method(name string) *ObjMethod {
-	return nil
+func (o *Object) Method(name string) *ObjMethod {
+	return newObjMethod(o, name)
 }
 
 func (o Object) Methods() []ObjMethod {
@@ -103,11 +101,10 @@ type ObjField struct {
 }
 
 func newObjField(obj *Object, name string) *ObjField {
-	of := &ObjField{
+	return &ObjField{
 		obj:  obj,
 		name: name,
 	}
-	return of
 }
 
 func (of *ObjField) Name() string {
@@ -169,6 +166,19 @@ func (of *ObjField) Get() (interface{}, error) {
 }
 
 type ObjMethod struct {
+	obj  *Object
+	name string
+}
+
+func newObjMethod(obj *Object, name string) *ObjMethod {
+	return &ObjMethod{
+		obj:  obj,
+		name: name,
+	}
+}
+
+func (om *ObjMethod) IsValid() bool {
+	return false
 }
 
 func (om *ObjMethod) Call(args []interface{}) ([]interface{}, error) {

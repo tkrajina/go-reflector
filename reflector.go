@@ -20,6 +20,19 @@ func New(obj interface{}) *Object {
 	return &Object{obj: obj}
 }
 
+func (o *Object) IsStructOrPtrToStructUnderlyingType() (bool, bool, reflect.Type) {
+	var isStruct, isPtrToStruct bool
+	ty := o.Type()
+	if ty.Kind() == reflect.Struct {
+		isStruct = true
+	}
+	if ty.Kind() == reflect.Ptr && ty.Elem().Kind() == reflect.Struct {
+		ty = ty.Elem()
+		isPtrToStruct = true
+	}
+	return isStruct, isPtrToStruct, ty
+}
+
 func (o *Object) Fields() []ObjField {
 	return o.fields(reflect.TypeOf(o.obj))
 }
@@ -89,16 +102,29 @@ type ObjField struct {
 	name string
 }
 
+func newObjField(obj *Object, name string) *ObjField {
+	of := &ObjField{
+		obj:  obj,
+		name: name,
+	}
+	return of
+}
+
 func (of *ObjField) Name() string {
 	return of.name
 }
 
+func (of *ObjField) Kind() reflect.Kind {
+	return reflect.Invalid
+}
+
+func (of *ObjField) Type() reflect.Type {
+	return nil
+}
+
 func (of *ObjField) Valid() bool {
-	ty := of.obj.Type()
-	if ty.Kind() == reflect.Ptr {
-		ty = ty.Elem()
-	}
-	if ty.Kind() != reflect.Struct {
+	strct, ptrStrct, ty := of.obj.IsStructOrPtrToStructUnderlyingType()
+	if !strct && !ptrStrct {
 		return false
 	}
 	_, found := ty.FieldByName(of.name)
@@ -106,27 +132,40 @@ func (of *ObjField) Valid() bool {
 }
 
 func (of *ObjField) Set(value interface{}) error {
-	ty := of.obj.Type()
-	if ty.Kind() == reflect.Ptr {
-		ty = ty.Elem()
-	} else {
-		return fmt.Errorf("Cannot set %s because obj is not a pointer", of.name)
+	strct, ptrStrct, ty := of.obj.IsStructOrPtrToStructUnderlyingType()
+	fmt.Print(strct, ptrStrct, ty)
+	if !strct && !ptrStrct {
+		return fmt.Errorf("Cannot set %s because obj is not a pointer to struct", of.name)
 	}
-	if ty.Kind() != reflect.Struct {
-		return fmt.Errorf("Cannot set %s because obj is not a struct", of.name)
-	}
+
 	v := reflect.ValueOf(value)
-	reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name).Set(v)
+	var field reflect.Value
+	if ptrStrct {
+		field = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
+	} else {
+		field = reflect.ValueOf(of.obj.obj).FieldByName(of.name)
+	}
+
+	if !field.IsValid() {
+		return fmt.Errorf("Field %s not valid", of.name)
+	}
+	if !field.CanSet() {
+		return fmt.Errorf("Field %s not settable", of.name)
+	}
+
+	fmt.Println(ty)
+	field.Set(v)
 	return nil
 }
 
 func (of *ObjField) Get() (interface{}, error) {
-	field, found := reflect.TypeOf(of.obj).FieldByName(of.name)
-	_ = field
-	if !found {
-		return nil, fmt.Errorf("Cannot find %s", of.name)
+	strct, ptrStrct, _ := of.obj.IsStructOrPtrToStructUnderlyingType()
+	if !strct && !ptrStrct {
+		return nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
 	}
-	return nil, nil
+
+	value := reflect.ValueOf(of.obj.obj).FieldByName(of.name).Interface()
+	return value, nil
 }
 
 type ObjMethod struct {

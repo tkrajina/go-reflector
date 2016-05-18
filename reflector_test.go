@@ -92,7 +92,14 @@ func TestSetFieldNonPointer(t *testing.T) {
 
 	err := obj.Field("Street").Set("ulica")
 	assert.Error(t, err)
-	assert.NotEqual(t, p.Street, "ulica")
+	assert.NotEqual(t, "ulica", p.Street)
+
+	street, err := obj.Field("Street").Get()
+	assert.Nil(t, err)
+
+	// This actually don't work because p is a struct and reflector is working on it's own copy:
+	assert.Equal(t, "", street)
+
 }
 
 func TestSetField(t *testing.T) {
@@ -100,6 +107,7 @@ func TestSetField(t *testing.T) {
 	obj := New(&p)
 	assert.True(t, obj.IsPtr())
 
-	obj.Field("Street").Set("ulica")
-	assert.Equal(t, p.Street, "ulica")
+	err := obj.Field("Street").Set("ulica")
+	assert.Nil(t, err)
+	assert.Equal(t, "ulica", p.Street)
 }

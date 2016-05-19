@@ -154,15 +154,24 @@ func TestMethods(t *testing.T) {
 
 func TestCallMethod(t *testing.T) {
 	obj := New(&Person{})
-	res, err := obj.Method("Add").Call([]interface{}{2, 3, 6})
+	method := obj.Method("Add")
+	res, err := method.Call([]interface{}{2, 3, 6})
 	assert.Nil(t, err)
 	assert.Equal(t, len(res), 1)
 	assert.Equal(t, res[0], 11)
+
+	assert.True(t, method.IsValid())
+	assert.Equal(t, len(method.InTypes()), 3)
+	assert.Equal(t, len(method.OutTypes()), 1)
 }
 
 func TestCallInvalidMethod(t *testing.T) {
 	obj := New(&Person{})
-	res, err := obj.Method("AddAdddd").Call([]interface{}{2, 3, 6})
+	method := obj.Method("AddAdddd")
+	res, err := method.Call([]interface{}{2, 3, 6})
 	assert.NotNil(t, err)
 	assert.Nil(t, res)
+
+	assert.Equal(t, len(method.InTypes()), 0)
+	assert.Equal(t, len(method.OutTypes()), 0)
 }

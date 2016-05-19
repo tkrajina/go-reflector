@@ -202,12 +202,42 @@ func newObjMethod(obj *Object, name string) *ObjMethod {
 	}
 }
 
+func (om *ObjMethod) method() reflect.Value {
+	return reflect.ValueOf(om.obj.obj).MethodByName(om.name)
+}
+
+func (om *ObjMethod) InTypes() []reflect.Type {
+	method := reflect.ValueOf(om.obj.obj).MethodByName(om.name)
+	if !method.IsValid() {
+		return []reflect.Type{}
+	}
+	ty := method.Type()
+	out := make([]reflect.Type, ty.NumIn())
+	for i := 0; i < ty.NumIn(); i++ {
+		out[i] = ty.In(i)
+	}
+	return out
+}
+
+func (om *ObjMethod) OutTypes() []reflect.Type {
+	method := reflect.ValueOf(om.obj.obj).MethodByName(om.name)
+	if !method.IsValid() {
+		return []reflect.Type{}
+	}
+	ty := method.Type()
+	out := make([]reflect.Type, ty.NumOut())
+	for i := 0; i < ty.NumOut(); i++ {
+		out[i] = ty.Out(i)
+	}
+	return out
+}
+
 func (om *ObjMethod) IsValid() bool {
-	return false
+	return om.method().IsValid()
 }
 
 func (om *ObjMethod) Call(args []interface{}) ([]interface{}, error) {
-	method := reflect.ValueOf(om.obj.obj).MethodByName(om.name)
+	method := om.method()
 	if !method.IsValid() {
 		return nil, fmt.Errorf("Invalid method: %s", om.name)
 	}

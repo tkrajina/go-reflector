@@ -159,3 +159,10 @@ func TestCallMethod(t *testing.T) {
 	assert.Equal(t, len(res), 1)
 	assert.Equal(t, res[0], 11)
 }
+
+func TestCallInvalidMethod(t *testing.T) {
+	obj := New(&Person{})
+	res, err := obj.Method("AddAdddd").Call([]interface{}{2, 3, 6})
+	assert.NotNil(t, err)
+	assert.Nil(t, res)
+}

@@ -207,5 +207,18 @@ func (om *ObjMethod) IsValid() bool {
 }
 
 func (om *ObjMethod) Call(args []interface{}) ([]interface{}, error) {
-	return nil, nil
+	method := reflect.ValueOf(om.obj.obj).MethodByName(om.name)
+	if !method.IsValid() {
+		return nil, fmt.Errorf("Invalid method: %s", om.name)
+	}
+	in := make([]reflect.Value, len(args))
+	for n := range args {
+		in[n] = reflect.ValueOf(args[n])
+	}
+	out := method.Call(in)
+	res := make([]interface{}, len(out))
+	for n := range out {
+		res[n] = out[n].Interface()
+	}
+	return res, nil
 }

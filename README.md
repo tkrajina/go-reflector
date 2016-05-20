@@ -76,7 +76,7 @@ In most cases this is not a desired situation, but you can use reflector to dete
 
 The `err` is not `nil` only if something was wrong with the method (for example invalid method name, or wrong argument number/types), not with the actual method call.
 If the call finished, `err` will be `nil`.
-If the method call returned an err, you can check it with:
+If the method call returned an error, you can check it with:
 
     if resp.IsError() {
         fmt.Println("Got an error:", resp.Error.Error())

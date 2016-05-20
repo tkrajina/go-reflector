@@ -1,5 +1,11 @@
 # Golang reflector
 
+First of all, don't use reflection if you don't have to.
+
+But if you really have to... This library offers a simplified Golang reflection abstraction.
+
+**This lib is still a work in progress**
+
 ## Getting and setting fields
 
 Let's suppose we have structs like this one:

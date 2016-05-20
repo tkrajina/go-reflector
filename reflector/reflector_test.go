@@ -303,3 +303,12 @@ func TestAllTags(t *testing.T) {
 	assert.Equal(t, tags["tag"], "be")
 	assert.Equal(t, tags["tag2"], "1,2,3")
 }
+
+func TestNewFromType(t *testing.T) {
+	obj1 := NewFromType(reflect.TypeOf(Person{}))
+	obj2 := New(&Person{})
+
+	assert.Equal(t, obj1.objType.String(), obj2.objType.String())
+	assert.Equal(t, obj1.objKind.String(), obj2.objKind.String())
+	assert.Equal(t, obj1.underlyingType.String(), obj2.underlyingType.String())
+}

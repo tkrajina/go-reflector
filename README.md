@@ -47,6 +47,20 @@ Set field value:
 
 Don't forget to use a pointer in `New()`, otherwise setters won't work (they will work but on a copy of your data).
 
+## Tags
+
+Get a tag:
+
+    jsonTag := obj.Field("Name").Tag("json")
+
+Get tag values array (exploded with "," as a delimiter):
+
+    jsonTag := obj.Field("Name").TagExpanded("json")
+
+Or get a map with all field tags:
+
+    fieldTagsMap := obj.Field("Name").Tags("json")
+
 ## Listing fields
 
 There are three ways to list fields:

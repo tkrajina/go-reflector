@@ -382,6 +382,7 @@ func newCallResult(res []interface{}) *CallResult {
 	return cr
 }
 
-func (cr *CallResult) IsErrorResult() bool {
+// IsError checks if the last value is a non-nil error
+func (cr *CallResult) IsError() bool {
 	return cr.Error != nil
 }

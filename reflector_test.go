@@ -179,7 +179,7 @@ func TestCallMethod(t *testing.T) {
 	method := obj.Method("Add")
 	res, err := method.Call(2, 3, 6)
 	assert.Nil(t, err)
-	assert.False(t, res.IsErrorResult())
+	assert.False(t, res.IsError())
 	assert.Equal(t, len(res.Result), 1)
 	assert.Equal(t, res.Result[0], 11)
 
@@ -249,7 +249,7 @@ func TestCallMethodWithoutErrResult(t *testing.T) {
 	res, err := obj.Method("ReturnsError").Call(true)
 	assert.Nil(t, err)
 	assert.Equal(t, len(res.Result), 3)
-	assert.True(t, res.IsErrorResult())
+	assert.True(t, res.IsError())
 }
 
 func TestCallMethodWithErrResult(t *testing.T) {
@@ -257,7 +257,7 @@ func TestCallMethodWithErrResult(t *testing.T) {
 	res, err := obj.Method("ReturnsError").Call(false)
 	assert.Nil(t, err)
 	assert.Equal(t, len(res.Result), 3)
-	assert.False(t, res.IsErrorResult())
+	assert.False(t, res.IsError())
 }
 
 func TestTag(t *testing.T) {

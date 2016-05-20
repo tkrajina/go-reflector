@@ -394,3 +394,29 @@ func TestString(t *testing.T) {
 	err = obj.Field("Aaa").Set(1)
 	assert.NotNil(t, err)
 }
+
+type TestWithInnerStruct struct {
+	Aaa string
+	Bbb struct {
+		Ccc int
+		Ddd float64
+	}
+}
+
+func TestInnerStruct(t *testing.T) {
+	obj := New(TestWithInnerStruct{})
+	fields := obj.Fields()
+	assert.Equal(t, 2, len(fields))
+
+	assert.Equal(t, "Aaa", fields[0].Name())
+	assert.Equal(t, "string", fields[0].Type().String())
+	assert.Equal(t, "string", fields[0].Kind().String())
+
+	assert.Equal(t, "Bbb", fields[1].Name())
+	assert.Equal(t, "struct { Ccc int; Ddd float64 }", fields[1].Type().String())
+	assert.Equal(t, "struct", fields[1].Kind().String())
+
+	// This is not an anonymous struct, so fields are always the same:
+	assert.Equal(t, 2, len(obj.FieldsAll()))
+	assert.Equal(t, 2, len(obj.FieldsFlattened()))
+}

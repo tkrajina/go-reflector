@@ -24,7 +24,7 @@ Let's suppose we have structs like:
         return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
     }
 
-Initialize the reflector's object wrapper:
+Initialize the **reflector**'s object wrapper:
 
     import "github.com/tkrajina/go-reflector/reflector"
 
@@ -59,7 +59,7 @@ Get tag values array (exploded with "," as a delimiter):
 
 Or get a map with all field tags:
 
-    fieldTagsMap := obj.Field("Name").Tags("json")
+    fieldTagsMap := obj.Field("Name").Tags()
 
 ## Listing fields
 
@@ -76,7 +76,7 @@ Depending on which listing you want, you can use:
     fields := obj.Fields()
 
 Be aware that because of those anonymous structs, some fields can be returned twice.
-In most cases this is not a desired situation, but you can use reflector to detect such situations in your code:
+In most cases this is not a desired situation, but you can use **reflector** to detect such situations in your code:
 
     doubleDeclaredFields := obj.FindDoubleFields()
     if len(doubleDeclaredFields) > 0 {
@@ -107,4 +107,4 @@ If the method call returned an error, you can check it with:
 License
 -------
 
-Reflector is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+**Reflector** is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)

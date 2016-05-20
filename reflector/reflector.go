@@ -369,8 +369,8 @@ func newObjMethod(obj *Obj, name string) *ObjMethod {
 	}
 }
 
-func (om *ObjMethod) Name() {
-	return name
+func (om *ObjMethod) Name() string {
+	return om.name
 }
 
 func (om *ObjMethod) InTypes() []reflect.Type {

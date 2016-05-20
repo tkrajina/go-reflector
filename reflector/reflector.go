@@ -318,10 +318,6 @@ func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	return strings.Split(of.structField.Tag.Get(tag), ","), nil
 }
 
-func (of *ObjField) Valid() bool {
-	return of.valid
-}
-
 func (of *ObjField) Anonymous() bool {
 	if err := of.assertValid(); err != nil {
 		return false

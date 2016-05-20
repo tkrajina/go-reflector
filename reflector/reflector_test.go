@@ -165,11 +165,11 @@ func TestIsStructForCustomTypes(t *testing.T) {
 }
 
 func TestFieldValidity(t *testing.T) {
-	assert.False(t, New(CustomType(1)).Field("jkljkl").Valid())
-	assert.False(t, New(Person{}).Field("street").Valid())
-	assert.True(t, New(Person{}).Field("Street").Valid())
-	assert.True(t, New(Person{}).Field("Number").Valid())
-	assert.True(t, New(Person{}).Field("Name").Valid())
+	assert.False(t, New(CustomType(1)).Field("jkljkl").IsValid())
+	assert.False(t, New(Person{}).Field("street").IsValid())
+	assert.True(t, New(Person{}).Field("Street").IsValid())
+	assert.True(t, New(Person{}).Field("Number").IsValid())
+	assert.True(t, New(Person{}).Field("Name").IsValid())
 }
 
 func TestSetFieldNonPointer(t *testing.T) {

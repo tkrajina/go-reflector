@@ -380,6 +380,9 @@ func TestNilType(t *testing.T) {
 
 	err = obj.Field("Aaa").Set(1)
 	assert.NotNil(t, err)
+
+	_, err = obj.Method("aaa").Call("bu")
+	assert.NotNil(t, err)
 }
 
 func TestString(t *testing.T) {
@@ -392,6 +395,9 @@ func TestString(t *testing.T) {
 	assert.NotNil(t, err)
 
 	err = obj.Field("Aaa").Set(1)
+	assert.NotNil(t, err)
+
+	_, err = obj.Method("aaa").Call("bu")
 	assert.NotNil(t, err)
 }
 

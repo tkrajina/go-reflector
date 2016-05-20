@@ -359,14 +359,21 @@ type ObjMethod struct {
 	obj    *Obj
 	name   string
 	method reflect.Value
+	valid  bool
 }
 
 func newObjMethod(obj *Obj, name string) *ObjMethod {
-	return &ObjMethod{
-		obj:    obj,
-		name:   name,
-		method: reflect.ValueOf(obj.iface).MethodByName(name),
+	res := &ObjMethod{
+		obj:  obj,
+		name: name,
 	}
+	if !res.obj.Valid() {
+		res.valid = false
+	} else {
+		res.method = reflect.ValueOf(obj.iface).MethodByName(name)
+		res.valid = res.method.IsValid()
+	}
+	return res
 }
 
 func (om *ObjMethod) Name() string {
@@ -400,12 +407,15 @@ func (om *ObjMethod) OutTypes() []reflect.Type {
 }
 
 func (om *ObjMethod) IsValid() bool {
-	return om.method.IsValid()
+	return om.valid
 }
 
 // Call calls this method. Note that in the error returning value is not the error from the method call
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
-	if !om.method.IsValid() {
+	if !om.obj.Valid() {
+		return nil, fmt.Errorf("Invalid object type %T for method %s", om.obj.iface, om.name)
+	}
+	if !om.IsValid() {
 		return nil, fmt.Errorf("Invalid method %s in %T", om.name, om.obj.iface)
 	}
 	in := make([]reflect.Value, len(args))

@@ -49,16 +49,34 @@ func New(obj interface{}) *Obj {
 	return o
 }
 
+// Fields returns fields. Don't list fields inside Anonymous fields as distinct fields
 func (o *Obj) Fields() []ObjField {
 	return o.fields(reflect.TypeOf(o.iface), fieldsNoFlattenAnonymous)
 }
 
+// FieldsFlattened returns fields. Will not list Anonymous fields but it will list fields declared in those anonymous fields
 func (o Obj) FieldsFlattened() []ObjField {
 	return o.fields(reflect.TypeOf(o.iface), fieldsFlattenAnonymous)
 }
 
+// FieldsFlattened returns fields. List both anonymous fields and fields declared inside anonymous fields.
 func (o Obj) FieldsAll() []ObjField {
 	return o.fields(reflect.TypeOf(o.iface), fieldsAll)
+}
+
+// FindDoubleFields checks if this object has declared multiple fields with a same name (by checking recursively Anonymous
+// fields and their fields)
+func (o Obj) FindDoubleFields() []string {
+	fields := map[string]int{}
+	res := []string{}
+	for _, f := range o.FieldsAll() {
+		counter := 0
+		if counter := fields[f.name]; counter == 1 {
+			res = append(res, f.name)
+		}
+		fields[f.name] = counter + 1
+	}
+	return res
 }
 
 func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {

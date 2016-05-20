@@ -38,6 +38,11 @@ func (p Person) Hi(name string) string {
 	return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
 }
 
+type Company struct {
+	Address
+	Number int `tag:"bi"`
+}
+
 func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)
@@ -86,6 +91,26 @@ func TestListFieldsAll(t *testing.T) {
 	assert.Equal(t, fields[1].Name(), "Address")
 	assert.Equal(t, fields[2].Name(), "Street")
 	assert.Equal(t, fields[3].Name(), "Number")
+}
+
+func TestListFieldsAllWithDoubleFields(t *testing.T) {
+	obj := New(Company{})
+
+	fields := obj.FieldsAll()
+	assert.Equal(t, len(fields), 4)
+	assert.Equal(t, fields[0].Name(), "Address")
+	assert.Equal(t, fields[1].Name(), "Street")
+	// Number is declared both in Company and in Address, so listed twice here:
+	assert.Equal(t, fields[2].Name(), "Number")
+	assert.Equal(t, fields[3].Name(), "Number")
+}
+
+func TestFindDoubleFields(t *testing.T) {
+	obj := New(Company{})
+
+	fields := obj.FindDoubleFields()
+	assert.Equal(t, 1, len(fields))
+	assert.Equal(t, fields[0], "Number")
 }
 
 func TestListFieldsOnPointer(t *testing.T) {

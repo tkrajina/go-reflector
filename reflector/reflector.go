@@ -20,12 +20,6 @@ type Obj struct {
 	objKind reflect.Kind
 }
 
-func panicIfErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 func NewFromType(ty reflect.Type) *Obj {
 	return New(reflect.New(ty).Interface())
 }

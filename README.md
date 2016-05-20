@@ -52,7 +52,7 @@ Don't forget to use a pointer in `New()`, otherwise setters won't work (they wil
 There are three ways to list fields:
 
  * List all fields: This will include Anonymous structs **and** fields declared in those anonymous structs (`Name`, `Address`, `Street`, `Number`).
- * List flattened fields: Includes fields declared in anonymous structs **without** those anonymous structs (`Name`, `Street`, `Address`).
+ * List flattened fields: Includes fields declared in anonymous structs **without** those anonymous structs (`Name`, `Street`, `Number`).
  * List nonflattened fields: Includes fields anonymous structs **without** theis fields (`Name`, `Address`).
 
 Depending on which listing you want, you can use:

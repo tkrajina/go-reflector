@@ -122,10 +122,7 @@ func (o Obj) IsStructOrPtrToStruct() bool {
 }
 
 func (o *Obj) Field(name string) *ObjField {
-	return &ObjField{
-		obj:  o,
-		name: name,
-	}
+	return newObjField(o, name)
 }
 
 func (o Obj) Type() reflect.Type {
@@ -153,13 +150,58 @@ func (o *Obj) Methods() []ObjMethod {
 type ObjField struct {
 	obj  *Obj
 	name string
+
+	valueField  reflect.Value
+	structField reflect.StructField
+
+	fieldKind reflect.Kind
+	fieldType reflect.Type
+
+	valid bool
 }
 
 func newObjField(obj *Obj, name string) *ObjField {
-	return &ObjField{
+	res := &ObjField{
 		obj:  obj,
 		name: name,
 	}
+
+	res.valid = false
+	res.fieldKind = reflect.Invalid
+	if res.obj.IsStructOrPtrToStruct() {
+		var found bool
+		var valueField reflect.Value
+		var structField reflect.StructField
+		if res.obj.isPtrToStruct {
+			valueField = reflect.ValueOf(res.obj.iface).Elem().FieldByName(res.name)
+			structField, found = reflect.TypeOf(res.obj.iface).Elem().FieldByName(res.name)
+		} else {
+			valueField = reflect.ValueOf(res.obj.iface).FieldByName(res.name)
+			structField, found = reflect.TypeOf(res.obj.iface).FieldByName(res.name)
+		}
+		res.valueField = valueField
+		res.structField = structField
+		res.valid = found && valueField.IsValid()
+		if res.valid {
+			res.fieldType = structField.Type
+			res.fieldKind = structField.Type.Kind()
+		} else {
+			res.fieldKind = reflect.Invalid
+		}
+	}
+
+	return res
+}
+
+func (of *ObjField) assertValid() error {
+	if !of.valid {
+		return fmt.Errorf("Invalid field %s", of.name)
+	}
+	return nil
+}
+
+func (of *ObjField) IsValid() bool {
+	return of.valid
 }
 
 func (of *ObjField) Name() string {
@@ -167,37 +209,27 @@ func (of *ObjField) Name() string {
 }
 
 func (of *ObjField) Kind() reflect.Kind {
-	ty, err := of.Type()
-	if err != nil {
-		return reflect.Invalid
-	}
-	return ty.Kind()
+	return of.fieldKind
 }
 
-func (of *ObjField) Type() (reflect.Type, error) {
-	value, err := of.Get()
-	if err != nil {
-		return nil, fmt.Errorf("Invalid field %s in %T", of.name, of.obj.iface)
-	}
-	return reflect.TypeOf(value), nil
+func (of *ObjField) Type() reflect.Type {
+	return of.fieldType
 }
 
 func (of *ObjField) Tag(tag string) (string, error) {
-	_, field, err := of.field()
-	if err != nil {
+	if err := of.assertValid(); err != nil {
 		return "", err
 	}
-	return (*field).Tag.Get(tag), nil
+	return of.structField.Tag.Get(tag), nil
 }
 
 func (of *ObjField) Tags() (map[string]string, error) {
-	_, field, err := of.field()
-	if err != nil {
+	if err := of.assertValid(); err != nil {
 		return nil, err
 	}
 
 	res := map[string]string{}
-	tag := (*field).Tag
+	tag := of.structField.Tag
 
 	// This code is copied/modified from: reflect/type.go:
 	for tag != "" {
@@ -260,22 +292,20 @@ func (of *ObjField) Tags() (map[string]string, error) {
 
 // TagExpanded returns the tag value "expanded" with commas
 func (of *ObjField) TagExpanded(tag string) ([]string, error) {
-	_, field, err := of.field()
-	if err != nil {
+	if err := of.assertValid(); err != nil {
 		return nil, err
 	}
-	return strings.Split((*field).Tag.Get(tag), ","), nil
+	return strings.Split(of.structField.Tag.Get(tag), ","), nil
 }
 
 func (of *ObjField) Valid() bool {
-	if !of.obj.IsStructOrPtrToStruct() {
-		return false
-	}
-	_, found := of.obj.underlyingType.FieldByName(of.name)
-	return found
+	return of.valid
 }
 
 func (of *ObjField) Anonymous() bool {
+	if err := of.assertValid(); err != nil {
+		return false
+	}
 	field, found := of.obj.underlyingType.FieldByName(of.name)
 	if !found {
 		return false
@@ -284,66 +314,25 @@ func (of *ObjField) Anonymous() bool {
 }
 
 func (of *ObjField) Set(value interface{}) error {
-	if !of.obj.IsStructOrPtrToStruct() {
-		return fmt.Errorf("Cannot set %s in %T because obj is not a pointer to struct", of.name, of.obj.iface)
+	if err := of.assertValid(); err != nil {
+		return err
 	}
 
-	v := reflect.ValueOf(value)
-	var field reflect.Value
-	if of.obj.isPtrToStruct {
-		field = reflect.ValueOf(of.obj.iface).Elem().FieldByName(of.name)
-	} else {
-		field = reflect.ValueOf(of.obj.iface).FieldByName(of.name)
-	}
-
-	if !field.IsValid() {
-		return fmt.Errorf("Field %s in %T not valid", of.name, of.obj.iface)
-	}
-	if !field.CanSet() {
+	if !of.valueField.CanSet() {
 		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.iface)
 	}
 
-	field.Set(v)
+	of.valueField.Set(reflect.ValueOf(value))
 
 	return nil
 }
 
-func (of *ObjField) field() (*reflect.Value, *reflect.StructField, error) {
-	if !of.obj.IsStructOrPtrToStruct() {
-		return nil, nil, fmt.Errorf("Cannot get %s in %T because underlying obj is not a struct", of.name, of.obj.iface)
-	}
-
-	var valueField reflect.Value
-	var structField reflect.StructField
-	var found bool
-	if of.obj.isPtrToStruct {
-		valueField = reflect.ValueOf(of.obj.iface).Elem().FieldByName(of.name)
-		structField, found = reflect.TypeOf(of.obj.iface).Elem().FieldByName(of.name)
-	} else {
-		valueField = reflect.ValueOf(of.obj.iface).FieldByName(of.name)
-		structField, found = reflect.TypeOf(of.obj.iface).FieldByName(of.name)
-	}
-
-	if !found {
-		return nil, nil, fmt.Errorf("Field not found %s in %T", of.name, of.obj.iface)
-	}
-
-	return &valueField, &structField, nil
-}
-
 func (of *ObjField) Get() (interface{}, error) {
-	fptr, _, err := of.field()
-	if err != nil {
+	if err := of.assertValid(); err != nil {
 		return nil, err
 	}
-	field := *fptr
 
-	if !field.IsValid() {
-		return nil, fmt.Errorf("Invalid field %s in %T", of.name, of.obj.iface)
-	}
-
-	value := field.Interface()
-	return value, nil
+	return of.valueField.Interface(), nil
 }
 
 type ObjMethod struct {

@@ -56,18 +56,18 @@ func TestListFieldsFlattened(t *testing.T) {
 	assert.Equal(t, fields[1].Name(), "Street")
 	assert.Equal(t, fields[2].Name(), "Number")
 
+	assert.True(t, obj.Field("Name").IsValid())
+
 	kind := obj.Field("Name").Kind()
 	assert.Equal(t, reflect.String, kind)
 
 	kind = obj.Field("BuName").Kind()
 	assert.Equal(t, reflect.Invalid, kind)
 
-	ty, err := obj.Field("Number").Type()
-	assert.Nil(t, err)
+	ty := obj.Field("Number").Type()
 	assert.Equal(t, reflect.TypeOf(1), ty)
 
-	ty, err = obj.Field("Istra").Type()
-	assert.NotNil(t, err)
+	ty = obj.Field("Istra").Type()
 	assert.Nil(t, ty)
 }
 
@@ -131,12 +131,10 @@ func TestListFieldsOnPointer(t *testing.T) {
 	kind = obj.Field("BuName").Kind()
 	assert.Equal(t, reflect.Invalid, kind)
 
-	ty, err := obj.Field("Number").Type()
-	assert.Nil(t, err)
+	ty := obj.Field("Number").Type()
 	assert.Equal(t, reflect.TypeOf(1), ty)
 
-	ty, err = obj.Field("Istra").Type()
-	assert.NotNil(t, err)
+	ty = obj.Field("Istra").Type()
 	assert.Nil(t, ty)
 }
 
@@ -308,7 +306,7 @@ func TestInvalidTag(t *testing.T) {
 	obj := New(&Person{})
 	tag, err := obj.Field("HahaStreet").Tag("invalid")
 	assert.NotNil(t, err)
-	assert.Equal(t, err.Error(), "Field not found HahaStreet in *reflector.Person")
+	assert.Equal(t, "Invalid field HahaStreet", err.Error())
 	assert.Equal(t, len(tag), 0)
 }
 

@@ -1,6 +1,7 @@
 package reflector
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -20,6 +21,13 @@ type Person struct {
 
 func (p Person) Add(a, b, c int) int     { return a + b + c }
 func (p *Person) Substract(a, b int) int { return a - b }
+func (p Person) ReturnsError(err bool) (string, *int, error) {
+	i := 2
+	if err {
+		return "", nil, errors.New("Error here!")
+	}
+	return "jen", &i, nil
+}
 
 type CustomType int
 
@@ -162,8 +170,8 @@ func TestCustomTypeMethods(t *testing.T) {
 }
 
 func TestMethods(t *testing.T) {
-	assert.Equal(t, len(New(Person{}).Methods()), 2)
-	assert.Equal(t, len(New(&Person{}).Methods()), 3)
+	assert.Equal(t, len(New(Person{}).Methods()), 3)
+	assert.Equal(t, len(New(&Person{}).Methods()), 4)
 }
 
 func TestCallMethod(t *testing.T) {
@@ -171,8 +179,9 @@ func TestCallMethod(t *testing.T) {
 	method := obj.Method("Add")
 	res, err := method.Call(2, 3, 6)
 	assert.Nil(t, err)
-	assert.Equal(t, len(res), 1)
-	assert.Equal(t, res[0], 11)
+	assert.False(t, res.IsErrorResult())
+	assert.Equal(t, len(res.Result), 1)
+	assert.Equal(t, res.Result[0], 11)
 
 	assert.True(t, method.IsValid())
 	assert.Equal(t, len(method.InTypes()), 3)
@@ -180,7 +189,7 @@ func TestCallMethod(t *testing.T) {
 
 	sub, err := obj.Method("Substract").Call(5, 6)
 	assert.Nil(t, err)
-	assert.Equal(t, sub, []interface{}{-1})
+	assert.Equal(t, sub.Result, []interface{}{-1})
 }
 
 func TestCallInvalidMethod(t *testing.T) {
@@ -206,12 +215,12 @@ func TestMethodsValidityOnPtr(t *testing.T) {
 	{
 		res, err := obj.Method("Method1").Call()
 		assert.Nil(t, err)
-		assert.Equal(t, res, []interface{}{"yep"})
+		assert.Equal(t, res.Result, []interface{}{"yep"})
 	}
 	{
 		res, err := obj.Method("Method2").Call()
 		assert.Nil(t, err)
-		assert.Equal(t, res, []interface{}{7})
+		assert.Equal(t, res.Result, []interface{}{7})
 	}
 }
 
@@ -227,10 +236,26 @@ func TestMethodsValidityOnNonPtr(t *testing.T) {
 	{
 		res, err := obj.Method("Method1").Call()
 		assert.Nil(t, err)
-		assert.Equal(t, res, []interface{}{"yep"})
+		assert.Equal(t, res.Result, []interface{}{"yep"})
 	}
 	{
 		_, err := obj.Method("Method2").Call()
 		assert.NotNil(t, err)
 	}
+}
+
+func TestCallMethodWithoutErrResult(t *testing.T) {
+	obj := New(&Person{})
+	res, err := obj.Method("ReturnsError").Call(true)
+	assert.Nil(t, err)
+	assert.Equal(t, len(res.Result), 3)
+	assert.True(t, res.IsErrorResult())
+}
+
+func TestCallMethodWithErrResult(t *testing.T) {
+	obj := New(&Person{})
+	res, err := obj.Method("ReturnsError").Call(false)
+	assert.Nil(t, err)
+	assert.Equal(t, len(res.Result), 3)
+	assert.False(t, res.IsErrorResult())
 }

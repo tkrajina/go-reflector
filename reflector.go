@@ -241,7 +241,8 @@ func (om *ObjMethod) IsValid() bool {
 	return om.method().IsValid()
 }
 
-func (om *ObjMethod) Call(args ...interface{}) ([]interface{}, error) {
+// Call calls this method. Note that in the error returning value is not the error from the method call
+func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	method := om.method()
 	if !method.IsValid() {
 		return nil, fmt.Errorf("Invalid method: %s", om.name)
@@ -255,5 +256,28 @@ func (om *ObjMethod) Call(args ...interface{}) ([]interface{}, error) {
 	for n := range out {
 		res[n] = out[n].Interface()
 	}
-	return res, nil
+	return newCallResult(res), nil
+}
+
+type CallResult struct {
+	Result []interface{}
+	Error  error
+}
+
+func newCallResult(res []interface{}) *CallResult {
+	cr := &CallResult{Result: res}
+	if len(res) == 0 {
+		return cr
+	}
+	errorCandidate := res[len(res)-1]
+	if errorCandidate != nil {
+		if err, is := errorCandidate.(error); is {
+			cr.Error = err
+		}
+	}
+	return cr
+}
+
+func (cr *CallResult) IsErrorResult() bool {
+	return cr.Error != nil
 }

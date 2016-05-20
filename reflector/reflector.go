@@ -34,8 +34,14 @@ func NewFromType(ty reflect.Type) *Obj {
 
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
-	o.objType = reflect.TypeOf(obj)
-	o.objKind = o.objType.Kind()
+
+	if obj == nil {
+		o.objKind = reflect.Invalid
+		return o
+	} else {
+		o.objType = reflect.TypeOf(obj)
+		o.objKind = o.objType.Kind()
+	}
 
 	ty := o.Type()
 	if ty.Kind() == reflect.Struct {
@@ -47,6 +53,10 @@ func New(obj interface{}) *Obj {
 	}
 	o.underlyingType = ty
 	return o
+}
+
+func (o *Obj) Valid() bool {
+	return o.objKind == reflect.Invalid
 }
 
 // Fields returns fields. Don't list fields inside Anonymous fields as distinct fields
@@ -81,6 +91,10 @@ func (o Obj) FindDoubleFields() []string {
 
 func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
 	fields := make([]ObjField, 0)
+
+	if !o.Valid() {
+		return fields
+	}
 
 	if ty.Kind() == reflect.Ptr {
 		ty = ty.Elem()
@@ -139,6 +153,9 @@ func (o *Obj) Method(name string) *ObjMethod {
 
 func (o *Obj) Methods() []ObjMethod {
 	res := []ObjMethod{}
+	if !o.Valid() {
+		return res
+	}
 	ty := o.Type()
 	for i := 0; i < ty.NumMethod(); i++ {
 		method := ty.Method(i)

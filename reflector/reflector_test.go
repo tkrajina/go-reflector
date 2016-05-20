@@ -47,11 +47,12 @@ func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)
 
+	assert.True(t, obj.Valid())
 	assert.False(t, obj.IsPtr())
 	assert.True(t, obj.IsStructOrPtrToStruct())
 
 	fields := obj.FieldsFlattened()
-	assert.Equal(t, len(fields), 3)
+	assert.Equal(t, 3, len(fields))
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Street")
 	assert.Equal(t, fields[2].Name(), "Number")
@@ -353,4 +354,43 @@ func TestAnonymousFields(t *testing.T) {
 
 	assert.True(t, obj.Field("Address").Anonymous())
 	assert.False(t, obj.Field("Name").Anonymous())
+}
+
+func TestNil(t *testing.T) {
+	obj := New(nil)
+	assert.Equal(t, 0, len(obj.Fields()))
+	assert.Equal(t, 0, len(obj.Methods()))
+
+	res, err := obj.Field("Aaa").Get()
+	assert.Nil(t, res)
+	assert.NotNil(t, err)
+
+	err = obj.Field("Aaa").Set(1)
+	assert.NotNil(t, err)
+}
+
+func TestNilType(t *testing.T) {
+	obj := NewFromType(nil)
+	assert.Equal(t, 0, len(obj.Fields()))
+	assert.Equal(t, 0, len(obj.Methods()))
+
+	res, err := obj.Field("Aaa").Get()
+	assert.Nil(t, res)
+	assert.NotNil(t, err)
+
+	err = obj.Field("Aaa").Set(1)
+	assert.NotNil(t, err)
+}
+
+func TestString(t *testing.T) {
+	obj := New("")
+	assert.Equal(t, 0, len(obj.Fields()))
+	assert.Equal(t, 0, len(obj.Methods()))
+
+	res, err := obj.Field("Aaa").Get()
+	assert.Nil(t, res)
+	assert.NotNil(t, err)
+
+	err = obj.Field("Aaa").Set(1)
+	assert.NotNil(t, err)
 }

@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+type fieldListingType int
+
+const (
+	fieldsAll                fieldListingType = iota
+	fieldsFlattenAnonymous                    = iota
+	fieldsNoFlattenAnonymous                  = iota
+)
+
 type Obj struct {
 	iface interface{}
 
@@ -42,14 +50,18 @@ func New(obj interface{}) *Obj {
 }
 
 func (o *Obj) Fields() []ObjField {
-	return o.fields(reflect.TypeOf(o.iface), false)
+	return o.fields(reflect.TypeOf(o.iface), fieldsNoFlattenAnonymous)
 }
 
 func (o Obj) FieldsFlattened() []ObjField {
-	return o.fields(reflect.TypeOf(o.iface), true)
+	return o.fields(reflect.TypeOf(o.iface), fieldsFlattenAnonymous)
 }
 
-func (o *Obj) fields(ty reflect.Type, flatten bool) []ObjField {
+func (o Obj) FieldsAll() []ObjField {
+	return o.fields(reflect.TypeOf(o.iface), fieldsAll)
+}
+
+func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
 	fields := make([]ObjField, 0)
 
 	if ty.Kind() == reflect.Ptr {
@@ -65,10 +77,17 @@ func (o *Obj) fields(ty reflect.Type, flatten bool) []ObjField {
 
 		k := field.Type.Kind()
 		if isExportable(field) {
-			if flatten && k == reflect.Struct && field.Anonymous {
-				fields = append(fields, o.fields(field.Type, flatten)...)
-			} else {
+			if listingType == fieldsAll {
 				fields = append(fields, *newObjField(o, field.Name))
+				if k == reflect.Struct && field.Anonymous {
+					fields = append(fields, o.fields(field.Type, listingType)...)
+				}
+			} else {
+				if listingType == fieldsFlattenAnonymous && k == reflect.Struct && field.Anonymous {
+					fields = append(fields, o.fields(field.Type, listingType)...)
+				} else {
+					fields = append(fields, *newObjField(o, field.Name))
+				}
 			}
 		}
 	}

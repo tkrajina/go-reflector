@@ -76,6 +76,18 @@ func TestListFields(t *testing.T) {
 	assert.Equal(t, fields[1].Name(), "Address")
 }
 
+func TestListFieldsAll(t *testing.T) {
+	p := Person{}
+	obj := New(p)
+
+	fields := obj.FieldsAll()
+	assert.Equal(t, len(fields), 4)
+	assert.Equal(t, fields[0].Name(), "Name")
+	assert.Equal(t, fields[1].Name(), "Address")
+	assert.Equal(t, fields[2].Name(), "Street")
+	assert.Equal(t, fields[3].Name(), "Number")
+}
+
 func TestListFieldsOnPointer(t *testing.T) {
 	p := &Person{}
 	obj := New(p)

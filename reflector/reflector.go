@@ -29,6 +29,9 @@ type Obj struct {
 }
 
 func NewFromType(ty reflect.Type) *Obj {
+	if ty == nil {
+		return New(nil)
+	}
 	return New(reflect.New(ty).Interface())
 }
 
@@ -56,7 +59,7 @@ func New(obj interface{}) *Obj {
 }
 
 func (o *Obj) Valid() bool {
-	return o.objKind == reflect.Invalid
+	return o.objKind != reflect.Invalid
 }
 
 // Fields returns fields. Don't list fields inside Anonymous fields as distinct fields

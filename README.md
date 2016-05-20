@@ -14,6 +14,10 @@ Let's suppose we have structs like this one:
         Address
     }
 
+    func (p Person) Hi(name string) string {
+        return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
+    }
+
 First, initialize the reflector's object wrapper:
 
     import "github.com/tkrajina/go-reflector/reflector"
@@ -31,7 +35,11 @@ Get field value:
 
 Set field value:
 
+	p := Person{}
+	obj := reflector.New(&p)
     err := obj.Field("Name").Set("Something")
+
+Don't forget to use a pointer in `New()`, otherwise setters won't work (they will work but on a copy of your data).
 
 ## Listing fields
 
@@ -54,6 +62,24 @@ In most cases this is not a desired situation, if you want to use reflector to d
 
 ## Calling methods
 
+	obj := reflector.New(&Person{})
+    resp, err := obj.Method("Hi").Call("John", "Smith")
+
+The `err` is not nil only if something was wrong with the method (not with the actual method call). If you want to check if the result of the method is error (i.e. if the last element in call response is a non-nil `error`):
+
+    if resp.IsError() {
+        fmt.Println("Got an error:", resp.Error.Error())
+    } else {
+        fmt.Println("Method call response:", resp.Result)
+    }
+
 ## Listing methods
 
-# License
+    for _, method := range obj.Methods() {
+        fmt.Println("Method", method.Name(), "with input types", method.InTypes(), "and output types", method.OutTypes())
+    }
+
+License
+-------
+
+Reflector is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)

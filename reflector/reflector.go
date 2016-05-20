@@ -369,6 +369,10 @@ func newObjMethod(obj *Obj, name string) *ObjMethod {
 	}
 }
 
+func (om *ObjMethod) Name() {
+	return name
+}
+
 func (om *ObjMethod) InTypes() []reflect.Type {
 	method := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
 	if !method.IsValid() {

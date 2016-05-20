@@ -9,6 +9,14 @@ import (
 
 type Object struct {
 	obj interface{}
+
+	isStruct      bool
+	isPtrToStruct bool
+
+	// If ptr to struct, this field will contain the type of that struct
+	underlyingType reflect.Type
+	objType        reflect.Type
+	objKind        reflect.Kind
 }
 
 func panicIfErr(err error) {
@@ -18,20 +26,20 @@ func panicIfErr(err error) {
 }
 
 func New(obj interface{}) *Object {
-	return &Object{obj: obj}
-}
+	o := &Object{obj: obj}
+	o.objType = reflect.TypeOf(obj)
+	o.objKind = o.objType.Kind()
 
-func (o *Object) structOrPtrToStructUnderlyingType() (bool, bool, reflect.Type) {
-	var isStruct, isPtrToStruct bool
 	ty := o.Type()
 	if ty.Kind() == reflect.Struct {
-		isStruct = true
+		o.isStruct = true
 	}
 	if ty.Kind() == reflect.Ptr && ty.Elem().Kind() == reflect.Struct {
 		ty = ty.Elem()
-		isPtrToStruct = true
+		o.isPtrToStruct = true
 	}
-	return isStruct, isPtrToStruct, ty
+	o.underlyingType = ty
+	return o
 }
 
 func (o *Object) Fields() []ObjField {
@@ -70,12 +78,11 @@ func (o *Object) fields(ty reflect.Type, flatten bool) []ObjField {
 }
 
 func (o Object) IsPtr() bool {
-	return o.Kind() == reflect.Ptr
+	return o.objKind == reflect.Ptr
 }
 
 func (o Object) IsStructOrPtrToStruct() bool {
-	strct, ptrStrct, _ := o.structOrPtrToStructUnderlyingType()
-	return strct || ptrStrct
+	return o.isStruct || o.isPtrToStruct
 }
 
 func (o *Object) Field(name string) *ObjField {
@@ -86,11 +93,11 @@ func (o *Object) Field(name string) *ObjField {
 }
 
 func (o Object) Type() reflect.Type {
-	return reflect.TypeOf(o.obj)
+	return o.objType
 }
 
 func (o Object) Kind() reflect.Kind {
-	return o.Type().Kind()
+	return o.objKind
 }
 
 func (o *Object) Method(name string) *ObjMethod {
@@ -225,24 +232,21 @@ func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 }
 
 func (of *ObjField) Valid() bool {
-	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
-	if !strct && !ptrStrct {
+	if !of.obj.IsStructOrPtrToStruct() {
 		return false
 	}
-	_, found := ty.FieldByName(of.name)
+	_, found := of.obj.underlyingType.FieldByName(of.name)
 	return found
 }
 
 func (of *ObjField) Set(value interface{}) error {
-	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
-	fmt.Print(strct, ptrStrct, ty)
-	if !strct && !ptrStrct {
+	if !of.obj.IsStructOrPtrToStruct() {
 		return fmt.Errorf("Cannot set %s in %T because obj is not a pointer to struct", of.name, of.obj.obj)
 	}
 
 	v := reflect.ValueOf(value)
 	var field reflect.Value
-	if ptrStrct {
+	if of.obj.isPtrToStruct {
 		field = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
 	} else {
 		field = reflect.ValueOf(of.obj.obj).FieldByName(of.name)
@@ -255,21 +259,20 @@ func (of *ObjField) Set(value interface{}) error {
 		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.obj)
 	}
 
-	fmt.Println(ty)
 	field.Set(v)
+
 	return nil
 }
 
 func (of *ObjField) field() (*reflect.Value, *reflect.StructField, error) {
-	strct, ptrStrct, _ := of.obj.structOrPtrToStructUnderlyingType()
-	if !strct && !ptrStrct {
+	if !of.obj.IsStructOrPtrToStruct() {
 		return nil, nil, fmt.Errorf("Cannot get %s in %T because underlying obj is not a struct", of.name, of.obj.obj)
 	}
 
 	var valueField reflect.Value
 	var structField reflect.StructField
 	var found bool
-	if ptrStrct {
+	if of.obj.isPtrToStruct {
 		valueField = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
 		structField, found = reflect.TypeOf(of.obj.obj).Elem().FieldByName(of.name)
 	} else {
@@ -300,19 +303,17 @@ func (of *ObjField) Get() (interface{}, error) {
 }
 
 type ObjMethod struct {
-	obj  *Object
-	name string
+	obj    *Object
+	name   string
+	method reflect.Value
 }
 
 func newObjMethod(obj *Object, name string) *ObjMethod {
 	return &ObjMethod{
-		obj:  obj,
-		name: name,
+		obj:    obj,
+		name:   name,
+		method: reflect.ValueOf(obj.obj).MethodByName(name),
 	}
-}
-
-func (om *ObjMethod) method() reflect.Value {
-	return reflect.ValueOf(om.obj.obj).MethodByName(om.name)
 }
 
 func (om *ObjMethod) InTypes() []reflect.Type {
@@ -342,20 +343,19 @@ func (om *ObjMethod) OutTypes() []reflect.Type {
 }
 
 func (om *ObjMethod) IsValid() bool {
-	return om.method().IsValid()
+	return om.method.IsValid()
 }
 
 // Call calls this method. Note that in the error returning value is not the error from the method call
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
-	method := om.method()
-	if !method.IsValid() {
+	if !om.method.IsValid() {
 		return nil, fmt.Errorf("Invalid method %s in %T", om.name, om.obj.obj)
 	}
 	in := make([]reflect.Value, len(args))
 	for n := range args {
 		in[n] = reflect.ValueOf(args[n])
 	}
-	out := method.Call(in)
+	out := om.method.Call(in)
 	res := make([]interface{}, len(out))
 	for n := range out {
 		res[n] = out[n].Interface()

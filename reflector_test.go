@@ -169,7 +169,7 @@ func TestMethods(t *testing.T) {
 func TestCallMethod(t *testing.T) {
 	obj := New(&Person{})
 	method := obj.Method("Add")
-	res, err := method.Call([]interface{}{2, 3, 6})
+	res, err := method.Call(2, 3, 6)
 	assert.Nil(t, err)
 	assert.Equal(t, len(res), 1)
 	assert.Equal(t, res[0], 11)
@@ -177,6 +177,10 @@ func TestCallMethod(t *testing.T) {
 	assert.True(t, method.IsValid())
 	assert.Equal(t, len(method.InTypes()), 3)
 	assert.Equal(t, len(method.OutTypes()), 1)
+
+	sub, err := obj.Method("Substract").Call(5, 6)
+	assert.Nil(t, err)
+	assert.Equal(t, sub, []interface{}{-1})
 }
 
 func TestCallInvalidMethod(t *testing.T) {
@@ -200,12 +204,12 @@ func TestMethodsValidityOnPtr(t *testing.T) {
 	assert.True(t, obj.Method("Method2").IsValid())
 
 	{
-		res, err := obj.Method("Method1").Call([]interface{}{})
+		res, err := obj.Method("Method1").Call()
 		assert.Nil(t, err)
 		assert.Equal(t, res, []interface{}{"yep"})
 	}
 	{
-		res, err := obj.Method("Method2").Call([]interface{}{})
+		res, err := obj.Method("Method2").Call()
 		assert.Nil(t, err)
 		assert.Equal(t, res, []interface{}{7})
 	}
@@ -221,12 +225,12 @@ func TestMethodsValidityOnNonPtr(t *testing.T) {
 	assert.False(t, obj.Method("Method2").IsValid())
 
 	{
-		res, err := obj.Method("Method1").Call([]interface{}{})
+		res, err := obj.Method("Method1").Call()
 		assert.Nil(t, err)
 		assert.Equal(t, res, []interface{}{"yep"})
 	}
 	{
-		_, err := obj.Method("Method2").Call([]interface{}{})
+		_, err := obj.Method("Method2").Call()
 		assert.NotNil(t, err)
 	}
 }

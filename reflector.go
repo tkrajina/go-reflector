@@ -241,7 +241,7 @@ func (om *ObjMethod) IsValid() bool {
 	return om.method().IsValid()
 }
 
-func (om *ObjMethod) Call(args []interface{}) ([]interface{}, error) {
+func (om *ObjMethod) Call(args ...interface{}) ([]interface{}, error) {
 	method := om.method()
 	if !method.IsValid() {
 		return nil, fmt.Errorf("Invalid method: %s", om.name)

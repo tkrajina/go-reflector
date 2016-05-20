@@ -65,6 +65,9 @@ Note that because of those anonymous structs, some fields can be returned twice.
 In most cases this is not a desired situation, if you want to use reflector to detect such situations, you can use...
 
     doubleDeclaredFields := obj.FindDoubleFields()
+    if len(doubleDeclaredFields) > 0 {
+        fmt.Println("Detected multiple fields with same name:", doubleDeclaredFields)
+    }
 
 ## Calling methods
 

@@ -45,7 +45,7 @@ func TestListFieldsFlattened(t *testing.T) {
 	assert.False(t, obj.IsPtr())
 	assert.True(t, obj.IsStructOrPtrToStruct())
 
-	fields := obj.FieldFlattened()
+	fields := obj.FieldsFlattened()
 	assert.Equal(t, len(fields), 3)
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Street")
@@ -107,7 +107,7 @@ func TestListFieldsFlattenedOnPointer(t *testing.T) {
 	p := &Person{}
 	obj := New(p)
 
-	fields := obj.FieldFlattened()
+	fields := obj.FieldsFlattened()
 	assert.Equal(t, len(fields), 3)
 	assert.Equal(t, fields[0].Name(), "Name")
 	assert.Equal(t, fields[1].Name(), "Street")

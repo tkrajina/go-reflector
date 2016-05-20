@@ -38,7 +38,7 @@ func (o *Object) Fields() []ObjField {
 	return o.fields(reflect.TypeOf(o.obj), false)
 }
 
-func (o Object) FieldFlattened() []ObjField {
+func (o Object) FieldsFlattened() []ObjField {
 	return o.fields(reflect.TypeOf(o.obj), true)
 }
 

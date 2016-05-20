@@ -34,6 +34,9 @@ func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)
 
+	assert.False(t, obj.IsPtr())
+	assert.True(t, obj.IsStructOrPtrToStruct())
+
 	fields := obj.FieldFlattened()
 	assert.Equal(t, len(fields), 3)
 	assert.Equal(t, fields[0].Name(), "Name")
@@ -68,6 +71,9 @@ func TestListFields(t *testing.T) {
 func TestListFieldsOnPointer(t *testing.T) {
 	p := &Person{}
 	obj := New(p)
+
+	assert.True(t, obj.IsPtr())
+	assert.True(t, obj.IsStructOrPtrToStruct())
 
 	fields := obj.Fields()
 	assert.Equal(t, len(fields), 2)
@@ -104,6 +110,14 @@ func TestNoFieldsNoCustomType(t *testing.T) {
 	assert.Equal(t, len(New(CustomType(1)).Fields()), 0)
 	ct := CustomType(2)
 	assert.Equal(t, len(New(&ct).Fields()), 0)
+}
+
+func TestIsStructForCustomTypes(t *testing.T) {
+	ct := CustomType(2)
+	assert.False(t, New(CustomType(1)).IsPtr())
+	assert.True(t, New(&ct).IsPtr())
+	assert.False(t, New(CustomType(1)).IsStructOrPtrToStruct())
+	assert.False(t, New(&ct).IsStructOrPtrToStruct())
 }
 
 func TestFieldValidity(t *testing.T) {

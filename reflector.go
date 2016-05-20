@@ -20,7 +20,7 @@ func New(obj interface{}) *Object {
 	return &Object{obj: obj}
 }
 
-func (o *Object) IsStructOrPtrToStructUnderlyingType() (bool, bool, reflect.Type) {
+func (o *Object) structOrPtrToStructUnderlyingType() (bool, bool, reflect.Type) {
 	var isStruct, isPtrToStruct bool
 	ty := o.Type()
 	if ty.Kind() == reflect.Struct {
@@ -70,6 +70,11 @@ func (o *Object) fields(ty reflect.Type, flatten bool) []ObjField {
 
 func (o Object) IsPtr() bool {
 	return o.Kind() == reflect.Ptr
+}
+
+func (o Object) IsStructOrPtrToStruct() bool {
+	strct, ptrStrct, _ := o.structOrPtrToStructUnderlyingType()
+	return strct || ptrStrct
 }
 
 func (o *Object) Field(name string) *ObjField {
@@ -134,7 +139,7 @@ func (of *ObjField) Type() (reflect.Type, error) {
 }
 
 func (of *ObjField) Valid() bool {
-	strct, ptrStrct, ty := of.obj.IsStructOrPtrToStructUnderlyingType()
+	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
 	if !strct && !ptrStrct {
 		return false
 	}
@@ -143,7 +148,7 @@ func (of *ObjField) Valid() bool {
 }
 
 func (of *ObjField) Set(value interface{}) error {
-	strct, ptrStrct, ty := of.obj.IsStructOrPtrToStructUnderlyingType()
+	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
 	fmt.Print(strct, ptrStrct, ty)
 	if !strct && !ptrStrct {
 		return fmt.Errorf("Cannot set %s because obj is not a pointer to struct", of.name)
@@ -170,7 +175,7 @@ func (of *ObjField) Set(value interface{}) error {
 }
 
 func (of *ObjField) Get() (interface{}, error) {
-	strct, ptrStrct, _ := of.obj.IsStructOrPtrToStructUnderlyingType()
+	strct, ptrStrct, _ := of.obj.structOrPtrToStructUnderlyingType()
 	if !strct && !ptrStrct {
 		return nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
 	}

@@ -67,7 +67,7 @@ There are three ways to list fields:
 
  * List all fields: This will include anonymous structs **and** fields declared in  anonymous structs (`Name`, `Address`, `Street`, `Number`).
  * List flattened fields: Includes fields declared in anonymous structs **without**  anonymous structs (`Name`, `Street`, `Number`).
- * List nonflattened fields: Includes fields anonymous structs **without** their fields (`Name`, `Address`).
+ * List nonflattened fields: Includes anonymous structs **without** their fields (`Name`, `Address`).
 
 Depending on which listing you want, you can use:
 
@@ -75,7 +75,7 @@ Depending on which listing you want, you can use:
     fields := obj.FieldsFlattened()
     fields := obj.Fields()
 
-Be aware that because of anonymous structs, some fields can be returned twice!
+Be aware that because of anonymous structs, some field names can be returned twice!
 In most cases this is not a desired situation, but you can use **reflector** to detect such situations in your code:
 
     doubleDeclaredFields := obj.FindDoubleFields()

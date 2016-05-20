@@ -58,7 +58,7 @@ func New(obj interface{}) *Obj {
 	return o
 }
 
-func (o *Obj) Valid() bool {
+func (o *Obj) IsValid() bool {
 	return o.objKind != reflect.Invalid
 }
 
@@ -95,7 +95,7 @@ func (o Obj) FindDoubleFields() []string {
 func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
 	fields := make([]ObjField, 0)
 
-	if !o.Valid() {
+	if !o.IsValid() {
 		return fields
 	}
 
@@ -156,7 +156,7 @@ func (o *Obj) Method(name string) *ObjMethod {
 
 func (o *Obj) Methods() []ObjMethod {
 	res := []ObjMethod{}
-	if !o.Valid() {
+	if !o.IsValid() {
 		return res
 	}
 	ty := o.Type()
@@ -367,7 +367,7 @@ func newObjMethod(obj *Obj, name string) *ObjMethod {
 		obj:  obj,
 		name: name,
 	}
-	if !res.obj.Valid() {
+	if !res.obj.IsValid() {
 		res.valid = false
 	} else {
 		res.method = reflect.ValueOf(obj.iface).MethodByName(name)
@@ -412,7 +412,7 @@ func (om *ObjMethod) IsValid() bool {
 
 // Call calls this method. Note that in the error returning value is not the error from the method call
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
-	if !om.obj.Valid() {
+	if !om.obj.IsValid() {
 		return nil, fmt.Errorf("Invalid object type %T for method %s", om.obj.iface, om.name)
 	}
 	if !om.IsValid() {

@@ -47,7 +47,7 @@ func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)
 
-	assert.True(t, obj.Valid())
+	assert.True(t, obj.IsValid())
 	assert.False(t, obj.IsPtr())
 	assert.True(t, obj.IsStructOrPtrToStruct())
 

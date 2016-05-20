@@ -64,7 +64,7 @@ func (o *Obj) fields(ty reflect.Type, flatten bool) []ObjField {
 		field := ty.Field(i)
 
 		k := field.Type.Kind()
-		if string(field.Name[0]) == strings.ToUpper(string(field.Name[0])) {
+		if isExportable(field) {
 			if flatten && k == reflect.Struct && field.Anonymous {
 				fields = append(fields, o.fields(field.Type, flatten)...)
 			} else {
@@ -392,4 +392,8 @@ func newCallResult(res []interface{}) *CallResult {
 // IsError checks if the last value is a non-nil error
 func (cr *CallResult) IsError() bool {
 	return cr.Error != nil
+}
+
+func isExportable(field reflect.StructField) bool {
+	return field.PkgPath == ""
 }

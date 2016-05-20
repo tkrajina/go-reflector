@@ -23,8 +23,8 @@ func (p *Person) Substract(a, b int) int { return a - b }
 
 type CustomType int
 
-func (ct CustomType) Method1()  {}
-func (ct *CustomType) Method2() {}
+func (ct CustomType) Method1() string { return "yep" }
+func (ct *CustomType) Method2() int   { return 7 }
 
 func (p Person) Hi(name string) string {
 	return fmt.Sprintf("Hi %s my name is %s", name, p.Name)
@@ -188,4 +188,45 @@ func TestCallInvalidMethod(t *testing.T) {
 
 	assert.Equal(t, len(method.InTypes()), 0)
 	assert.Equal(t, len(method.OutTypes()), 0)
+}
+
+func TestMethodsValidityOnPtr(t *testing.T) {
+	ct := CustomType(1)
+	obj := New(&ct)
+
+	assert.True(t, obj.IsPtr())
+
+	assert.True(t, obj.Method("Method1").IsValid())
+	assert.True(t, obj.Method("Method2").IsValid())
+
+	{
+		res, err := obj.Method("Method1").Call([]interface{}{})
+		assert.Nil(t, err)
+		assert.Equal(t, res, []interface{}{"yep"})
+	}
+	{
+		res, err := obj.Method("Method2").Call([]interface{}{})
+		assert.Nil(t, err)
+		assert.Equal(t, res, []interface{}{7})
+	}
+}
+
+func TestMethodsValidityOnNonPtr(t *testing.T) {
+	obj := New(CustomType(1))
+
+	assert.False(t, obj.IsPtr())
+
+	assert.True(t, obj.Method("Method1").IsValid())
+	// False because it's not a pointer
+	assert.False(t, obj.Method("Method2").IsValid())
+
+	{
+		res, err := obj.Method("Method1").Call([]interface{}{})
+		assert.Nil(t, err)
+		assert.Equal(t, res, []interface{}{"yep"})
+	}
+	{
+		_, err := obj.Method("Method2").Call([]interface{}{})
+		assert.NotNil(t, err)
+	}
 }

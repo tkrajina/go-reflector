@@ -318,7 +318,7 @@ func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	return strings.Split(of.structField.Tag.Get(tag), ","), nil
 }
 
-func (of *ObjField) Anonymous() bool {
+func (of *ObjField) IsAnonymous() bool {
 	if err := of.assertValid(); err != nil {
 		return false
 	}

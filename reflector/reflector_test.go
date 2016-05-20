@@ -352,8 +352,8 @@ func TestNewFromType(t *testing.T) {
 func TestAnonymousFields(t *testing.T) {
 	obj := New(&Person{})
 
-	assert.True(t, obj.Field("Address").Anonymous())
-	assert.False(t, obj.Field("Name").Anonymous())
+	assert.True(t, obj.Field("Address").IsAnonymous())
+	assert.False(t, obj.Field("Name").IsAnonymous())
 }
 
 func TestNil(t *testing.T) {

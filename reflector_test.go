@@ -10,7 +10,7 @@ import (
 )
 
 type Address struct {
-	Street string `tag:"be"`
+	Street string `tag:"be" tag2:"1,2,3"`
 	Number int    `tag:"bi"`
 }
 
@@ -258,4 +258,48 @@ func TestCallMethodWithErrResult(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(res.Result), 3)
 	assert.False(t, res.IsErrorResult())
+}
+
+func TestTag(t *testing.T) {
+	obj := New(&Person{})
+	tag, err := obj.Field("Street").Tag("invalid")
+	assert.Nil(t, err)
+	assert.Equal(t, len(tag), 0)
+}
+
+func TestInvalidTag(t *testing.T) {
+	obj := New(&Person{})
+	tag, err := obj.Field("HahaStreet").Tag("invalid")
+	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), "Field not found HahaStreet on *reflector.Person")
+	assert.Equal(t, len(tag), 0)
+}
+
+func TestValidTag(t *testing.T) {
+	obj := New(&Person{})
+	tag, err := obj.Field("Street").Tag("tag")
+	assert.Nil(t, err)
+	assert.Equal(t, tag, "be")
+}
+
+func TestValidTags(t *testing.T) {
+	obj := New(&Person{})
+
+	tags, err := obj.Field("Street").TagExpanded("tag")
+	assert.Nil(t, err)
+	assert.Equal(t, tags, []string{"be"})
+
+	tags2, err := obj.Field("Street").TagExpanded("tag2")
+	assert.Nil(t, err)
+	assert.Equal(t, tags2, []string{"1", "2", "3"})
+}
+
+func TestAllTags(t *testing.T) {
+	obj := New(&Person{})
+
+	tags, err := obj.Field("Street").Tags()
+	assert.Nil(t, err)
+	assert.Equal(t, len(tags), 2)
+	assert.Equal(t, tags["tag"], "be")
+	assert.Equal(t, tags["tag2"], "1,2,3")
 }

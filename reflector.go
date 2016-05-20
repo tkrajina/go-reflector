@@ -3,6 +3,7 @@ package reflector
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -138,6 +139,91 @@ func (of *ObjField) Type() (reflect.Type, error) {
 	return reflect.TypeOf(value), nil
 }
 
+func (of *ObjField) Tag(tag string) (string, error) {
+	_, field, err := of.field()
+	if err != nil {
+		return "", err
+	}
+	return (*field).Tag.Get(tag), nil
+}
+
+func (of *ObjField) Tags() (map[string]string, error) {
+	_, field, err := of.field()
+	if err != nil {
+		return nil, err
+	}
+
+	res := map[string]string{}
+	tag := (*field).Tag
+
+	// This code is copied/modified from: reflect/type.go:
+	for tag != "" {
+		// Skip leading space.
+		i := 0
+		for i < len(tag) && tag[i] == ' ' {
+			i++
+		}
+		tag = tag[i:]
+		if tag == "" {
+			break
+		}
+
+		// Scan to colon. A space, a quote or a control character is a syntax error.
+		// Strictly speaking, control chars include the range [0x7f, 0x9f], not just
+		// [0x00, 0x1f], but in practice, we ignore the multi-byte control characters
+		// as it is simpler to inspect the tag's bytes than the tag's runes.
+		i = 0
+		for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != 0x7f {
+			i++
+		}
+		if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
+			break
+		}
+		name := string(tag[:i])
+		tag = tag[i+1:]
+
+		// Scan quoted string to find value.
+		i = 1
+		for i < len(tag) && tag[i] != '"' {
+			if tag[i] == '\\' {
+				i++
+			}
+			i++
+		}
+		if i >= len(tag) {
+			break
+		}
+		qvalue := string(tag[:i+1])
+		tag = tag[i+1:]
+
+		value, err := strconv.Unquote(qvalue)
+		if err != nil {
+			return nil, fmt.Errorf("Cannot unquote tag %s in %T.%s: %s", name, of.obj.obj, of.name, err.Error())
+		}
+		res[name] = value
+		/*
+			if key == name {
+				value, err := strconv.Unquote(qvalue)
+				if err != nil {
+					break
+				}
+				return value
+			}
+		*/
+	}
+
+	return res, nil
+}
+
+// TagExpanded returns the tag value "expanded" with commas
+func (of *ObjField) TagExpanded(tag string) ([]string, error) {
+	_, field, err := of.field()
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split((*field).Tag.Get(tag), ","), nil
+}
+
 func (of *ObjField) Valid() bool {
 	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
 	if !strct && !ptrStrct {
@@ -174,21 +260,39 @@ func (of *ObjField) Set(value interface{}) error {
 	return nil
 }
 
-func (of *ObjField) Get() (interface{}, error) {
+func (of *ObjField) field() (*reflect.Value, *reflect.StructField, error) {
 	strct, ptrStrct, _ := of.obj.structOrPtrToStructUnderlyingType()
 	if !strct && !ptrStrct {
-		return nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
+		return nil, nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
 	}
 
-	var field reflect.Value
+	var valueField reflect.Value
+	var structField reflect.StructField
+	var found bool
 	if ptrStrct {
-		field = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
+		valueField = reflect.ValueOf(of.obj.obj).Elem().FieldByName(of.name)
+		structField, found = reflect.TypeOf(of.obj.obj).Elem().FieldByName(of.name)
 	} else {
-		field = reflect.ValueOf(of.obj.obj).FieldByName(of.name)
+		valueField = reflect.ValueOf(of.obj.obj).FieldByName(of.name)
+		structField, found = reflect.TypeOf(of.obj.obj).FieldByName(of.name)
 	}
+
+	if !found {
+		return nil, nil, fmt.Errorf("Field not found %s on %T", of.name, of.obj.obj)
+	}
+
+	return &valueField, &structField, nil
+}
+
+func (of *ObjField) Get() (interface{}, error) {
+	fptr, _, err := of.field()
+	if err != nil {
+		return nil, err
+	}
+	field := *fptr
 
 	if !field.IsValid() {
-		return nil, fmt.Errorf("Invalid field %s", of.name)
+		return nil, fmt.Errorf("Invalid field %s on %T", of.name, of.obj.obj)
 	}
 
 	value := field.Interface()
@@ -245,7 +349,7 @@ func (om *ObjMethod) IsValid() bool {
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	method := om.method()
 	if !method.IsValid() {
-		return nil, fmt.Errorf("Invalid method: %s", om.name)
+		return nil, fmt.Errorf("Invalid method %s on %T", om.name, om.obj.obj)
 	}
 	in := make([]reflect.Value, len(args))
 	for n := range args {

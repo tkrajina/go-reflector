@@ -134,7 +134,7 @@ func (of *ObjField) Kind() reflect.Kind {
 func (of *ObjField) Type() (reflect.Type, error) {
 	value, err := of.Get()
 	if err != nil {
-		return nil, fmt.Errorf("Invalid field %s", of.name)
+		return nil, fmt.Errorf("Invalid field %s in %T", of.name, of.obj.obj)
 	}
 	return reflect.TypeOf(value), nil
 }
@@ -237,7 +237,7 @@ func (of *ObjField) Set(value interface{}) error {
 	strct, ptrStrct, ty := of.obj.structOrPtrToStructUnderlyingType()
 	fmt.Print(strct, ptrStrct, ty)
 	if !strct && !ptrStrct {
-		return fmt.Errorf("Cannot set %s because obj is not a pointer to struct", of.name)
+		return fmt.Errorf("Cannot set %s in %T because obj is not a pointer to struct", of.name, of.obj.obj)
 	}
 
 	v := reflect.ValueOf(value)
@@ -249,10 +249,10 @@ func (of *ObjField) Set(value interface{}) error {
 	}
 
 	if !field.IsValid() {
-		return fmt.Errorf("Field %s not valid", of.name)
+		return fmt.Errorf("Field %s in %T not valid", of.name, of.obj.obj)
 	}
 	if !field.CanSet() {
-		return fmt.Errorf("Field %s not settable", of.name)
+		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.obj)
 	}
 
 	fmt.Println(ty)
@@ -263,7 +263,7 @@ func (of *ObjField) Set(value interface{}) error {
 func (of *ObjField) field() (*reflect.Value, *reflect.StructField, error) {
 	strct, ptrStrct, _ := of.obj.structOrPtrToStructUnderlyingType()
 	if !strct && !ptrStrct {
-		return nil, nil, fmt.Errorf("Cannot get %s because underlying obj is not a struct", of.name)
+		return nil, nil, fmt.Errorf("Cannot get %s in %T because underlying obj is not a struct", of.name, of.obj.obj)
 	}
 
 	var valueField reflect.Value
@@ -278,7 +278,7 @@ func (of *ObjField) field() (*reflect.Value, *reflect.StructField, error) {
 	}
 
 	if !found {
-		return nil, nil, fmt.Errorf("Field not found %s on %T", of.name, of.obj.obj)
+		return nil, nil, fmt.Errorf("Field not found %s in %T", of.name, of.obj.obj)
 	}
 
 	return &valueField, &structField, nil
@@ -292,7 +292,7 @@ func (of *ObjField) Get() (interface{}, error) {
 	field := *fptr
 
 	if !field.IsValid() {
-		return nil, fmt.Errorf("Invalid field %s on %T", of.name, of.obj.obj)
+		return nil, fmt.Errorf("Invalid field %s in %T", of.name, of.obj.obj)
 	}
 
 	value := field.Interface()
@@ -349,7 +349,7 @@ func (om *ObjMethod) IsValid() bool {
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	method := om.method()
 	if !method.IsValid() {
-		return nil, fmt.Errorf("Invalid method %s on %T", om.name, om.obj.obj)
+		return nil, fmt.Errorf("Invalid method %s in %T", om.name, om.obj.obj)
 	}
 	in := make([]reflect.Value, len(args))
 	for n := range args {

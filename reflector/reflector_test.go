@@ -271,7 +271,7 @@ func TestInvalidTag(t *testing.T) {
 	obj := New(&Person{})
 	tag, err := obj.Field("HahaStreet").Tag("invalid")
 	assert.NotNil(t, err)
-	assert.Equal(t, err.Error(), "Field not found HahaStreet on *reflector.Person")
+	assert.Equal(t, err.Error(), "Field not found HahaStreet in *reflector.Person")
 	assert.Equal(t, len(tag), 0)
 }
 

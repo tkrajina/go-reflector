@@ -71,8 +71,9 @@ In most cases this is not a desired situation, if you want to use reflector to d
 	obj := reflector.New(&Person{})
     resp, err := obj.Method("Hi").Call("John", "Smith")
 
-The `err` is not nil only if something was wrong with the method (for example invalid method name), not with the actual method call.
-If the method call returned an err, you can check it in `resp`:
+The `err` is not nil only if something was wrong with the method (for example invalid method name, or wrong argument number/types), not with the actual method call.
+If the call finished, `err` will be `nil`.
+If the method call returned an err, you can check it with:
 
     if resp.IsError() {
         fmt.Println("Got an error:", resp.Error.Error())

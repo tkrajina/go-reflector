@@ -238,6 +238,14 @@ func (of *ObjField) Valid() bool {
 	return found
 }
 
+func (of *ObjField) Anonymous() bool {
+	field, found := of.obj.underlyingType.FieldByName(of.name)
+	if !found {
+		return false
+	}
+	return field.Anonymous
+}
+
 func (of *ObjField) Set(value interface{}) error {
 	if !of.obj.IsStructOrPtrToStruct() {
 		return fmt.Errorf("Cannot set %s in %T because obj is not a pointer to struct", of.name, of.obj.iface)

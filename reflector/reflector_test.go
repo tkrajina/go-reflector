@@ -312,3 +312,10 @@ func TestNewFromType(t *testing.T) {
 	assert.Equal(t, obj1.objKind.String(), obj2.objKind.String())
 	assert.Equal(t, obj1.underlyingType.String(), obj2.underlyingType.String())
 }
+
+func TestAnonymousFields(t *testing.T) {
+	obj := New(&Person{})
+
+	assert.True(t, obj.Field("Address").Anonymous())
+	assert.False(t, obj.Field("Name").Anonymous())
+}

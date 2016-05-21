@@ -71,7 +71,7 @@ There are three ways to list fields:
 
 Depending on which listing you want, you can use:
 
-    fields := obj.fieldsAll()
+    fields := obj.FieldsAll()
     fields := obj.FieldsFlattened()
     fields := obj.Fields()
 

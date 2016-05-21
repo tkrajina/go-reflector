@@ -15,6 +15,7 @@ const (
 	fieldsNoFlattenAnonymous                  = iota
 )
 
+// Obj is a wrapper for golang values which needed to be reflected. The value can be of any kind and any type.
 type Obj struct {
 	iface interface{}
 
@@ -28,6 +29,7 @@ type Obj struct {
 	objKind reflect.Kind
 }
 
+// NewFromType creates a new Obj but using reflect.Type
 func NewFromType(ty reflect.Type) *Obj {
 	if ty == nil {
 		return New(nil)
@@ -35,16 +37,16 @@ func NewFromType(ty reflect.Type) *Obj {
 	return New(reflect.New(ty).Interface())
 }
 
+// New initializes a new Obj wrapper
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
 	if obj == nil {
 		o.objKind = reflect.Invalid
 		return o
-	} else {
-		o.objType = reflect.TypeOf(obj)
-		o.objKind = o.objType.Kind()
 	}
+	o.objType = reflect.TypeOf(obj)
+	o.objKind = o.objType.Kind()
 
 	ty := o.Type()
 	if ty.Kind() == reflect.Struct {
@@ -58,6 +60,7 @@ func New(obj interface{}) *Obj {
 	return o
 }
 
+// IsValid checks if the underlying objects is valid. Nil is an invalid value, for example.
 func (o *Obj) IsValid() bool {
 	return o.objKind != reflect.Invalid
 }
@@ -72,7 +75,7 @@ func (o Obj) FieldsFlattened() []ObjField {
 	return o.fields(reflect.TypeOf(o.iface), fieldsFlattenAnonymous)
 }
 
-// FieldsFlattened returns fields. List both anonymous fields and fields declared inside anonymous fields.
+// FieldsAll returns fields. List both anonymous fields and fields declared inside anonymous fields.
 func (o Obj) FieldsAll() []ObjField {
 	return o.fields(reflect.TypeOf(o.iface), fieldsAll)
 }
@@ -93,7 +96,7 @@ func (o Obj) FindDoubleFields() []string {
 }
 
 func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
-	fields := make([]ObjField, 0)
+	var fields []ObjField
 
 	if !o.IsValid() {
 		return fields
@@ -130,30 +133,37 @@ func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
 	return fields
 }
 
+// IsPtr checks if the value is a pointer
 func (o Obj) IsPtr() bool {
 	return o.objKind == reflect.Ptr
 }
 
+// IsStructOrPtrToStruct checks if the value is a struct or a pointer to a struct
 func (o Obj) IsStructOrPtrToStruct() bool {
 	return o.isStruct || o.isPtrToStruct
 }
 
+// Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
 func (o *Obj) Field(name string) *ObjField {
 	return newObjField(o, name)
 }
 
+// Type returns the value type. If kind is invalid, this will return a zero filled reflect.Type
 func (o Obj) Type() reflect.Type {
 	return o.objType
 }
 
+// Kind returns the value's kind
 func (o Obj) Kind() reflect.Kind {
 	return o.objKind
 }
 
+// Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()
 func (o *Obj) Method(name string) *ObjMethod {
 	return newObjMethod(o, name)
 }
 
+// Methods returns the list of all methods
 func (o *Obj) Methods() []ObjMethod {
 	res := []ObjMethod{}
 	if !o.IsValid() {
@@ -167,6 +177,7 @@ func (o *Obj) Methods() []ObjMethod {
 	return res
 }
 
+// ObjField is a wrapper for the object's field.
 type ObjField struct {
 	obj  *Obj
 	name string
@@ -220,22 +231,27 @@ func (of *ObjField) assertValid() error {
 	return nil
 }
 
+// IsValid checks if the fiels is valid.
 func (of *ObjField) IsValid() bool {
 	return of.valid
 }
 
+// Name returns the field's name
 func (of *ObjField) Name() string {
 	return of.name
 }
 
+// Kind returns the field's kind
 func (of *ObjField) Kind() reflect.Kind {
 	return of.fieldKind
 }
 
+// Type returns the field's type
 func (of *ObjField) Type() reflect.Type {
 	return of.fieldType
 }
 
+// Tag returns the value of this specific tag or error if the field is invalid
 func (of *ObjField) Tag(tag string) (string, error) {
 	if err := of.assertValid(); err != nil {
 		return "", err
@@ -243,6 +259,7 @@ func (of *ObjField) Tag(tag string) (string, error) {
 	return of.structField.Tag.Get(tag), nil
 }
 
+// Tags returns the map of all fields or error (if the field is invalid)
 func (of *ObjField) Tags() (map[string]string, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
@@ -318,6 +335,7 @@ func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	return strings.Split(of.structField.Tag.Get(tag), ","), nil
 }
 
+// IsAnonymous checks if this is an anonymous (embedded) field
 func (of *ObjField) IsAnonymous() bool {
 	if err := of.assertValid(); err != nil {
 		return false
@@ -329,6 +347,7 @@ func (of *ObjField) IsAnonymous() bool {
 	return field.Anonymous
 }
 
+// Set sets a value for this field or error if field is invalid (or not settable)
 func (of *ObjField) Set(value interface{}) error {
 	if err := of.assertValid(); err != nil {
 		return err
@@ -343,6 +362,7 @@ func (of *ObjField) Set(value interface{}) error {
 	return nil
 }
 
+// Get gets the field value (of error if field is invalid)
 func (of *ObjField) Get() (interface{}, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
@@ -351,6 +371,7 @@ func (of *ObjField) Get() (interface{}, error) {
 	return of.valueField.Interface(), nil
 }
 
+// ObjMethod is a wrapper for an object method. The name of the method can be invalid.
 type ObjMethod struct {
 	obj    *Obj
 	name   string
@@ -372,10 +393,12 @@ func newObjMethod(obj *Obj, name string) *ObjMethod {
 	return res
 }
 
+// Name returns the method's name
 func (om *ObjMethod) Name() string {
 	return om.name
 }
 
+// InTypes returns an slice with this method's input types.
 func (om *ObjMethod) InTypes() []reflect.Type {
 	method := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
 	if !method.IsValid() {
@@ -389,6 +412,7 @@ func (om *ObjMethod) InTypes() []reflect.Type {
 	return out
 }
 
+// OutTypes returns an slice with this method's output types.
 func (om *ObjMethod) OutTypes() []reflect.Type {
 	method := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
 	if !method.IsValid() {
@@ -402,6 +426,7 @@ func (om *ObjMethod) OutTypes() []reflect.Type {
 	return out
 }
 
+// IsValid returns this method's validity
 func (om *ObjMethod) IsValid() bool {
 	return om.valid
 }
@@ -426,6 +451,7 @@ func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	return newCallResult(res), nil
 }
 
+// CallResult is a wrapper of a method call result
 type CallResult struct {
 	Result []interface{}
 	Error  error

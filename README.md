@@ -45,7 +45,7 @@ Set field value:
 	obj := reflector.New(&p)
     err := obj.Field("Name").Set("Something")
 
-Don't forget to use a pointer in `New()`, otherwise setters won't work (they will work but on a copy of your data).
+Don't forget to use a pointer in `New()`, otherwise setters won't work. Field "settability" can be checked by using `field.IsSettable()`.
 
 ## Tags
 

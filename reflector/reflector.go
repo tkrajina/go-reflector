@@ -347,13 +347,18 @@ func (of *ObjField) IsAnonymous() bool {
 	return field.Anonymous
 }
 
+// IsSettable checks if this field is settable
+func (of *ObjField) IsSettable() bool {
+	return of.valueField.CanSet()
+}
+
 // Set sets a value for this field or error if field is invalid (or not settable)
 func (of *ObjField) Set(value interface{}) error {
 	if err := of.assertValid(); err != nil {
 		return err
 	}
 
-	if !of.valueField.CanSet() {
+	if !of.IsSettable() {
 		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.iface)
 	}
 

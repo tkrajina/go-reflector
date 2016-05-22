@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// TODOs
+// - Most of the data needed for reflection is retrieved in constructors, but most of them can be cached for future use.
+
 type fieldListingType int
 
 const (

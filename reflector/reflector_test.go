@@ -179,7 +179,12 @@ func TestSetFieldNonPointer(t *testing.T) {
 
 	err := obj.Field("Street").Set("ulica")
 	assert.Error(t, err)
-	assert.NotEqual(t, "ulica", p.Street)
+
+	value, err := obj.Field("Street").Get()
+	assert.Nil(t, err)
+	assert.Equal(t, "", value)
+
+	assert.Equal(t, "", p.Street)
 
 	street, err := obj.Field("Street").Get()
 	assert.Nil(t, err)
@@ -196,6 +201,11 @@ func TestSetField(t *testing.T) {
 
 	err := obj.Field("Street").Set("ulica")
 	assert.Nil(t, err)
+
+	value, err := obj.Field("Street").Get()
+	assert.Nil(t, err)
+	assert.Equal(t, "ulica", value)
+
 	assert.Equal(t, "ulica", p.Street)
 }
 

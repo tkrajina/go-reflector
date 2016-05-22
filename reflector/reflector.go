@@ -18,10 +18,8 @@ const (
 	fieldsNoFlattenAnonymous                  = iota
 )
 
-// Obj is a wrapper for golang values which needed to be reflected. The value can be of any kind and any type.
-type Obj struct {
-	iface interface{}
-
+// ObjMetadata contains data which is always unique per Type
+type ObjMetadata struct {
 	isStruct      bool
 	isPtrToStruct bool
 
@@ -30,6 +28,40 @@ type Obj struct {
 
 	objType reflect.Type
 	objKind reflect.Kind
+
+	// TODO
+	fields  []ObjFieldMetadata
+	methods []ObjMethodMetadata
+}
+
+// ObjFieldMetadata contains data which is always unique per Type/Field
+type ObjFieldMetadata struct {
+	isStruct      bool
+	isPtrToStruct bool
+
+	// If ptr to struct, this field will contain the type of that struct
+	underlyingType reflect.Type
+
+	objType reflect.Type
+	objKind reflect.Kind
+	name    string
+
+	structField reflect.StructField
+
+	fieldKind reflect.Kind
+	fieldType reflect.Type
+}
+
+// ObjMethodMetadata contains data which is always unique per Type/Method
+type ObjMethodMetadata struct {
+	name   string
+	method reflect.Method
+}
+
+// Obj is a wrapper for golang values which need to be reflected. The value can be of any kind and any type.
+type Obj struct {
+	iface interface{}
+	ObjMetadata
 }
 
 // NewFromType creates a new Obj but using reflect.Type
@@ -182,23 +214,18 @@ func (o *Obj) Methods() []ObjMethod {
 
 // ObjField is a wrapper for the object's field.
 type ObjField struct {
-	obj  *Obj
-	name string
+	obj        *Obj
+	valueField reflect.Value
+	valid      bool
 
-	valueField  reflect.Value
-	structField reflect.StructField
-
-	fieldKind reflect.Kind
-	fieldType reflect.Type
-
-	valid bool
+	ObjFieldMetadata
 }
 
 func newObjField(obj *Obj, name string) *ObjField {
 	res := &ObjField{
-		obj:  obj,
-		name: name,
+		obj: obj,
 	}
+	res.name = name
 
 	res.valid = false
 	res.fieldKind = reflect.Invalid
@@ -381,23 +408,28 @@ func (of *ObjField) Get() (interface{}, error) {
 
 // ObjMethod is a wrapper for an object method. The name of the method can be invalid.
 type ObjMethod struct {
-	obj    *Obj
-	name   string
-	method reflect.Value
-	valid  bool
+	obj   *Obj
+	valid bool
+	ObjMethodMetadata
 }
 
 func newObjMethod(obj *Obj, name string) *ObjMethod {
 	res := &ObjMethod{
-		obj:  obj,
-		name: name,
+		obj: obj,
 	}
+	res.name = name
+
 	if !res.obj.IsValid() {
 		res.valid = false
 	} else {
-		res.method = reflect.ValueOf(obj.iface).MethodByName(name)
-		res.valid = res.method.IsValid()
+		if method, found := res.obj.objType.MethodByName(name); found {
+			res.method = method
+			res.valid = res.method.Func.IsValid()
+		} else {
+			res.valid = false
+		}
 	}
+
 	return res
 }
 
@@ -447,11 +479,12 @@ func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	if !om.IsValid() {
 		return nil, fmt.Errorf("Invalid method %s in %T", om.name, om.obj.iface)
 	}
-	in := make([]reflect.Value, len(args))
+	in := make([]reflect.Value, len(args)+1)
+	in[0] = reflect.ValueOf(om.obj.iface)
 	for n := range args {
-		in[n] = reflect.ValueOf(args[n])
+		in[n+1] = reflect.ValueOf(args[n])
 	}
-	out := om.method.Call(in)
+	out := om.method.Func.Call(in)
 	res := make([]interface{}, len(out))
 	for n := range out {
 		res[n] = out[n].Interface()

@@ -29,22 +29,35 @@ type ObjMetadata struct {
 	objType reflect.Type
 	objKind reflect.Kind
 
-	// TODO
-	fields  []ObjFieldMetadata
-	methods []ObjMethodMetadata
+	fields     map[string]ObjFieldMetadata
+	methods    map[string]ObjMethodMetadata
+	fieldNames map[fieldListingType][]string
+}
+
+func newObjMetadata(ty reflect.Type) *ObjMetadata {
+	res := new(ObjMetadata)
+	if ty == nil {
+		res.objKind = reflect.Invalid
+		return res
+	}
+
+	res.objType = ty
+	res.objKind = res.objType.Kind()
+
+	if ty.Kind() == reflect.Struct {
+		res.isStruct = true
+	}
+	if ty.Kind() == reflect.Ptr && ty.Elem().Kind() == reflect.Struct {
+		ty = ty.Elem()
+		res.isPtrToStruct = true
+	}
+	res.underlyingType = ty
+	return res
 }
 
 // ObjFieldMetadata contains data which is always unique per Type/Field
 type ObjFieldMetadata struct {
-	isStruct      bool
-	isPtrToStruct bool
-
-	// If ptr to struct, this field will contain the type of that struct
-	underlyingType reflect.Type
-
-	objType reflect.Type
-	objKind reflect.Kind
-	name    string
+	name string
 
 	structField reflect.StructField
 
@@ -76,22 +89,8 @@ func NewFromType(ty reflect.Type) *Obj {
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
-	if obj == nil {
-		o.objKind = reflect.Invalid
-		return o
-	}
-	o.objType = reflect.TypeOf(obj)
-	o.objKind = o.objType.Kind()
+	o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
 
-	ty := o.Type()
-	if ty.Kind() == reflect.Struct {
-		o.isStruct = true
-	}
-	if ty.Kind() == reflect.Ptr && ty.Elem().Kind() == reflect.Struct {
-		ty = ty.Elem()
-		o.isPtrToStruct = true
-	}
-	o.underlyingType = ty
 	return o
 }
 

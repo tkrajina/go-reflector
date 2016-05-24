@@ -52,7 +52,62 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 		res.isPtrToStruct = true
 	}
 	res.underlyingType = ty
+
+	allFields := res.getFields(res.objType, fieldsAll)
+
+	res.fieldNames = map[fieldListingType][]string{}
+	res.fieldNames[fieldsAll] = allFields
+	res.fieldNames[fieldsFlattenAnonymous] = res.getFields(res.objType, fieldsFlattenAnonymous)
+	res.fieldNames[fieldsNoFlattenAnonymous] = res.getFields(res.objType, fieldsNoFlattenAnonymous)
+
+	res.fields = map[string]ObjFieldMetadata{}
+	for _, fieldName := range allFields {
+		res.fields[fieldName] = *newObjFieldMetadata(res.objType, fieldName, res)
+	}
+
+	fmt.Printf("res.fieldNames=%+v\n", res.fieldNames)
+	fmt.Printf("res.fields=%+v\n", res.fields)
+
 	return res
+}
+
+// IsStructOrPtrToStruct checks if the value is a struct or a pointer to a struct
+func (om *ObjMetadata) IsStructOrPtrToStruct() bool {
+	return om.isStruct || om.isPtrToStruct
+}
+
+func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) []string {
+	var fields []string
+
+	if ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
+	}
+
+	if ty.Kind() != reflect.Struct {
+		return fields // No need to populate nonstructs
+	}
+
+	for i := 0; i < ty.NumField(); i++ {
+		field := ty.Field(i)
+
+		k := field.Type.Kind()
+		if isExportable(field) {
+			if listingType == fieldsAll {
+				fields = append(fields, field.Name)
+				if k == reflect.Struct && field.Anonymous {
+					fields = append(fields, om.getFields(field.Type, listingType)...)
+				}
+			} else {
+				if listingType == fieldsFlattenAnonymous && k == reflect.Struct && field.Anonymous {
+					fields = append(fields, om.getFields(field.Type, listingType)...)
+				} else {
+					fields = append(fields, field.Name)
+				}
+			}
+		}
+	}
+
+	return fields
 }
 
 // ObjFieldMetadata contains data which is always unique per Type/Field
@@ -63,6 +118,32 @@ type ObjFieldMetadata struct {
 
 	fieldKind reflect.Kind
 	fieldType reflect.Type
+
+	valid bool
+}
+
+func newObjFieldMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata) *ObjFieldMetadata {
+	res := &ObjFieldMetadata{}
+	res.fieldKind = reflect.Invalid
+	res.name = name
+	if objMetadata.IsStructOrPtrToStruct() {
+		var found bool
+		var structField reflect.StructField
+		if objMetadata.isPtrToStruct {
+			structField, found = objMetadata.objType.Elem().FieldByName(res.name)
+		} else {
+			structField, found = objMetadata.objType.FieldByName(res.name)
+		}
+		res.structField = structField
+		res.fieldType = structField.Type
+		if res.fieldType == nil {
+			res.valid = false
+		} else {
+			res.fieldKind = structField.Type.Kind()
+			res.valid = found
+		}
+	}
+	return res
 }
 
 // ObjMethodMetadata contains data which is always unique per Type/Method
@@ -101,17 +182,32 @@ func (o *Obj) IsValid() bool {
 
 // Fields returns fields. Don't list fields inside Anonymous fields as distinct fields
 func (o *Obj) Fields() []ObjField {
-	return o.fields(reflect.TypeOf(o.iface), fieldsNoFlattenAnonymous)
+	return o.getFields(fieldsNoFlattenAnonymous)
 }
 
 // FieldsFlattened returns fields. Will not list Anonymous fields but it will list fields declared in those anonymous fields
 func (o Obj) FieldsFlattened() []ObjField {
-	return o.fields(reflect.TypeOf(o.iface), fieldsFlattenAnonymous)
+	return o.getFields(fieldsFlattenAnonymous)
 }
 
 // FieldsAll returns fields. List both anonymous fields and fields declared inside anonymous fields.
 func (o Obj) FieldsAll() []ObjField {
-	return o.fields(reflect.TypeOf(o.iface), fieldsAll)
+	return o.getFields(fieldsAll)
+}
+
+func (o *Obj) getFields(listingType fieldListingType) []ObjField {
+	fieldNames := o.fieldNames[listingType]
+	if fieldNames == nil {
+		return []ObjField{}
+	}
+
+	res := make([]ObjField, len(fieldNames))
+	for n, fieldName := range fieldNames {
+		metadata := o.fields[fieldName]
+		res[n] = *newObjField(o, metadata)
+	}
+
+	return res
 }
 
 // FindDoubleFields checks if this object has declared multiple fields with a same name (by checking recursively Anonymous
@@ -129,57 +225,18 @@ func (o Obj) FindDoubleFields() []string {
 	return res
 }
 
-func (o *Obj) fields(ty reflect.Type, listingType fieldListingType) []ObjField {
-	var fields []ObjField
-
-	if !o.IsValid() {
-		return fields
-	}
-
-	if ty.Kind() == reflect.Ptr {
-		ty = ty.Elem()
-	}
-
-	if ty.Kind() != reflect.Struct {
-		return fields // No need to populate nonstructs
-	}
-
-	for i := 0; i < ty.NumField(); i++ {
-		field := ty.Field(i)
-
-		k := field.Type.Kind()
-		if isExportable(field) {
-			if listingType == fieldsAll {
-				fields = append(fields, *newObjField(o, field.Name))
-				if k == reflect.Struct && field.Anonymous {
-					fields = append(fields, o.fields(field.Type, listingType)...)
-				}
-			} else {
-				if listingType == fieldsFlattenAnonymous && k == reflect.Struct && field.Anonymous {
-					fields = append(fields, o.fields(field.Type, listingType)...)
-				} else {
-					fields = append(fields, *newObjField(o, field.Name))
-				}
-			}
-		}
-	}
-
-	return fields
-}
-
 // IsPtr checks if the value is a pointer
 func (o Obj) IsPtr() bool {
 	return o.objKind == reflect.Ptr
 }
 
-// IsStructOrPtrToStruct checks if the value is a struct or a pointer to a struct
-func (o Obj) IsStructOrPtrToStruct() bool {
-	return o.isStruct || o.isPtrToStruct
-}
-
 // Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
-func (o *Obj) Field(name string) *ObjField {
-	return newObjField(o, name)
+func (o *Obj) Field(fieldName string) *ObjField {
+	if metadata, found := o.fields[fieldName]; found {
+		return newObjField(o, metadata)
+	} else {
+		return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
+	}
 }
 
 // Type returns the value type. If kind is invalid, this will return a zero filled reflect.Type
@@ -215,38 +272,22 @@ func (o *Obj) Methods() []ObjMethod {
 type ObjField struct {
 	obj        *Obj
 	valueField reflect.Value
-	valid      bool
 
 	ObjFieldMetadata
 }
 
-func newObjField(obj *Obj, name string) *ObjField {
+func newObjField(obj *Obj, metadata ObjFieldMetadata) *ObjField {
 	res := &ObjField{
 		obj: obj,
 	}
-	res.name = name
 
-	res.valid = false
-	res.fieldKind = reflect.Invalid
+	res.ObjFieldMetadata = metadata
+
 	if res.obj.IsStructOrPtrToStruct() {
-		var found bool
-		var valueField reflect.Value
-		var structField reflect.StructField
 		if res.obj.isPtrToStruct {
-			valueField = reflect.ValueOf(res.obj.iface).Elem().FieldByName(res.name)
-			structField, found = reflect.TypeOf(res.obj.iface).Elem().FieldByName(res.name)
+			res.valueField = reflect.ValueOf(res.obj.iface).Elem().FieldByName(res.name)
 		} else {
-			valueField = reflect.ValueOf(res.obj.iface).FieldByName(res.name)
-			structField, found = reflect.TypeOf(res.obj.iface).FieldByName(res.name)
-		}
-		res.valueField = valueField
-		res.structField = structField
-		res.valid = found && valueField.IsValid()
-		if res.valid {
-			res.fieldType = structField.Type
-			res.fieldKind = structField.Type.Kind()
-		} else {
-			res.fieldKind = reflect.Invalid
+			res.valueField = reflect.ValueOf(res.obj.iface).FieldByName(res.name)
 		}
 	}
 
@@ -262,7 +303,7 @@ func (of *ObjField) assertValid() error {
 
 // IsValid checks if the fiels is valid.
 func (of *ObjField) IsValid() bool {
-	return of.valid
+	return of.valid && of.valueField.IsValid()
 }
 
 // Name returns the field's name

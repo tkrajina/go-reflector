@@ -119,6 +119,7 @@ type ObjFieldMetadata struct {
 	fieldKind reflect.Kind
 	fieldType reflect.Type
 
+	// Valid here is not yet the final info about an actual field validity, because value field still have .IsValid()
 	valid bool
 }
 
@@ -295,7 +296,7 @@ func newObjField(obj *Obj, metadata ObjFieldMetadata) *ObjField {
 }
 
 func (of *ObjField) assertValid() error {
-	if !of.valid {
+	if !of.IsValid() {
 		return fmt.Errorf("Invalid field %s", of.name)
 	}
 	return nil

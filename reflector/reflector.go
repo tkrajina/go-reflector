@@ -65,8 +65,10 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 		res.fields[fieldName] = *newObjFieldMetadata(res.objType, fieldName, res)
 	}
 
-	fmt.Printf("res.fieldNames=%+v\n", res.fieldNames)
-	fmt.Printf("res.fields=%+v\n", res.fields)
+	/*
+		fmt.Printf("res.fieldNames=%+v\n", res.fieldNames)
+		fmt.Printf("res.fields=%+v\n", res.fields)
+	*/
 
 	return res
 }
@@ -248,6 +250,13 @@ func (o Obj) Type() reflect.Type {
 // Kind returns the value's kind
 func (o Obj) Kind() reflect.Kind {
 	return o.objKind
+}
+
+func (o Obj) String() string {
+	if o.objType == nil {
+		return "nil"
+	}
+	return o.objType.String()
 }
 
 // Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()

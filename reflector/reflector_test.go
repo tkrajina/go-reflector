@@ -43,6 +43,15 @@ type Company struct {
 	Number int `tag:"bi"`
 }
 
+func TestString(t *testing.T) {
+	assert.Equal(t, "reflector.Person", New(Person{}).String())
+	assert.Equal(t, "*reflector.Person", New(&Person{}).String())
+	assert.Equal(t, "nil", New(nil).String())
+	assert.Equal(t, "int", New(1).String())
+	var i int
+	assert.Equal(t, "*int", New(&i).String())
+}
+
 func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)
@@ -401,7 +410,7 @@ func TestNilType(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestString(t *testing.T) {
+func TestStringObj(t *testing.T) {
 	obj := New("")
 	assert.Equal(t, 0, len(obj.Fields()))
 	assert.Equal(t, 0, len(obj.Methods()))

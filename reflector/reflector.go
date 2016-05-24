@@ -161,6 +161,13 @@ func (o Obj) Kind() reflect.Kind {
 	return o.objKind
 }
 
+func (o Obj) String() string {
+	if o.objType == nil {
+		return "nil"
+	}
+	return o.objType.String()
+}
+
 // Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()
 func (o *Obj) Method(name string) *ObjMethod {
 	return newObjMethod(o, name)

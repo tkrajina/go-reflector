@@ -215,14 +215,8 @@ func NewFromType(ty reflect.Type) *Obj {
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
-	ty := reflect.TypeOf(obj)
-	if metadata, found := metadataCache[ty]; found {
-		o.ObjMetadata = metadata
-	} else {
-		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
-		metadataCache[ty] = o.ObjMetadata
-		metadataCached += 1
-	}
+	o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
+	metadataCached = 1
 
 	return o
 }

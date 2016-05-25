@@ -15,10 +15,11 @@ func TestPerformance(t *testing.T) {
 	if n <= 0 {
 		n = 1000
 	}
-	p := &Person{}
-	obj := New(p)
 	started := time.Now()
 	for i := 0; i < int(n); i++ {
+		p := &Person{}
+		obj := New(p)
+
 		obj.Field("Number").Set(i)
 		if p.Number != i {
 			panic("Should be " + string(i))

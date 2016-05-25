@@ -10,6 +10,7 @@ import (
 
 // Utility to test performance of some typical operations, run with:
 // N=1000000 go test -v ./... -run=TestPerformance
+// Iy you change anything here, change TestPerformancePlain too!
 func TestPerformance(t *testing.T) {
 	n, _ := strconv.ParseInt(os.Getenv("N"), 10, 64)
 	if n <= 0 {
@@ -42,9 +43,42 @@ func TestPerformance(t *testing.T) {
 			panic("result should be 6")
 		}
 	}
+
+	assert.Equal(t, 1, metadataCached, "Only 1 metadata must be cached")
+	assert.Equal(t, 1, len(metadataCache), "Only 1 metadata must be cached")
+
 	ended := time.Now()
-	fmt.Println("n=", n)
-	fmt.Println("started:", started.Format("2006-01-02 15:04:05.123"))
-	fmt.Println("ended:", ended.Format("2006-01-02 15:04:05.123"))
-	fmt.Printf("duration: %fs\n", ended.Sub(started).Seconds())
+	fmt.Println("WITH REFLECTION")
+	fmt.Println("    n=", n)
+	fmt.Println("    started:", started.Format("2006-01-02 15:04:05.123"))
+	fmt.Println("    ended:", ended.Format("2006-01-02 15:04:05.123"))
+	fmt.Printf("    duration: %fs\n", ended.Sub(started).Seconds())
+}
+
+func TestPerformancePlain(t *testing.T) {
+	n, _ := strconv.ParseInt(os.Getenv("N"), 10, 64)
+	if n <= 0 {
+		n = 1000
+	}
+	started := time.Now()
+	for i := 0; i < int(n); i++ {
+		p := &Person{}
+
+		p.Number = i
+		number := p.Number
+		if number != i {
+			panic("Should be " + string(i))
+		}
+		res := p.Add(1, 2, 3)
+		if res != 6 {
+			panic("result should be 6")
+		}
+	}
+
+	ended := time.Now()
+	fmt.Println("WITHOUT REFLECTION")
+	fmt.Println("    n=", n)
+	fmt.Println("    started:", started.Format("2006-01-02 15:04:05.123"))
+	fmt.Println("    ended:", ended.Format("2006-01-02 15:04:05.123"))
+	fmt.Printf("    duration: %fs\n", ended.Sub(started).Seconds())
 }

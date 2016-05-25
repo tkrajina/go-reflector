@@ -50,6 +50,12 @@ func TestString(t *testing.T) {
 	assert.Equal(t, "int", New(1).String())
 	var i int
 	assert.Equal(t, "*int", New(&i).String())
+
+	// Check that when we twice get a field, the metadata field is cached only once:
+	assert.Equal(t, New(Person{}).Field("bu").ObjFieldMetadata, New(Person{}).Field("bu").ObjFieldMetadata)
+	assert.Equal(t, New(&Person{}).Field("bu").ObjFieldMetadata, New(&Person{}).Field("bu").ObjFieldMetadata)
+	assert.Equal(t, New(Person{}).Field("Address").ObjFieldMetadata, New(Person{}).Field("Address").ObjFieldMetadata)
+	assert.Equal(t, New(&Person{}).Field("bu").ObjFieldMetadata, New(&Person{}).Field("bu").ObjFieldMetadata)
 }
 
 func TestListFieldsFlattened(t *testing.T) {
@@ -233,6 +239,10 @@ func TestCustomTypeMethods(t *testing.T) {
 func TestMethods(t *testing.T) {
 	assert.Equal(t, len(New(Person{}).Methods()), 3)
 	assert.Equal(t, len(New(&Person{}).Methods()), 4)
+
+	// Check that when we twice get a field, the metadata field is cached only once:
+	assert.Equal(t, New(Person{}).Method("Add").ObjMethodMetadata, New(Person{}).Method("Add").ObjMethodMetadata)
+	assert.Equal(t, New(&Person{}).Method("Add").ObjMethodMetadata, New(&Person{}).Method("Add").ObjMethodMetadata)
 }
 
 func TestCallMethod(t *testing.T) {

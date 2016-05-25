@@ -98,6 +98,12 @@ If the method call returned an error, you can check it with:
         fmt.Println("Method call response:", resp.Result)
     }
 
+## Listing methods
+
+    for _, method := range obj.Methods() {
+        fmt.Println("Method", method.Name(), "with input types", method.InTypes(), "and output types", method.OutTypes())
+    }
+
 ## Performance
 
 When reflecting the same type multiple types, **reflector** will cache as much metadata as possible **only once** and use that in future.
@@ -124,12 +130,6 @@ If you make any changes to the library, run `make test-performance` to check per
     ok      github.com/tkrajina/go-reflector/reflector      4.285s
 
 Keep those numbers in mind before deciding to use reflection :)
-
-## Listing methods
-
-    for _, method := range obj.Methods() {
-        fmt.Println("Method", method.Name(), "with input types", method.InTypes(), "and output types", method.OutTypes())
-    }
 
 License
 -------

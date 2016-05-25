@@ -98,6 +98,33 @@ If the method call returned an error, you can check it with:
         fmt.Println("Method call response:", resp.Result)
     }
 
+## Performance
+
+Reflection is slow. To see how much slow it is, try:
+
+    $ make test-performance
+    N=1000000 go test -v ./... -run=TestPerformance
+    === RUN   TestPerformance
+    WITH REFLECTION
+        n= 1000000
+        started: 2016-05-25 08:35:15.5258
+        ended: 2016-05-25 08:35:19.5258
+        duration: 4.269112s
+    --- PASS: TestPerformance (4.27s)
+    === RUN   TestPerformancePlain
+    WITHOUT REFLECTION
+        n= 1000000
+        started: 2016-05-25 08:35:19.5258
+        ended: 2016-05-25 08:35:19.5258
+        duration: 0.005237s
+    --- PASS: TestPerformancePlain (0.01s)
+    PASS
+    ok      github.com/tkrajina/go-reflector/reflector      4.285s
+
+Keep that in mind before deciding to use reflection.
+
+And, if you make any changes to the library, run `make test-performance` to check performance improvement/deterioration before/after your change.
+
 ## Listing methods
 
     for _, method := range obj.Methods() {

@@ -67,7 +67,7 @@ There are three ways to list fields:
 
  * List all fields: This will include anonymous structs **and** fields declared in  anonymous structs (`Name`, `Address`, `Street`, `Number`).
  * List flattened fields: Includes fields declared in anonymous structs **without**  anonymous structs (`Name`, `Street`, `Number`).
- * List nonflattened fields: Includes anonymous structs **without** their fields (`Name`, `Address`).
+ * List nonflattened fields: Includes anonymous structs **without** their fields (`Name`, `Address`). This is the way fields are actually declared in the code.
 
 Depending on which listing you want, you can use:
 

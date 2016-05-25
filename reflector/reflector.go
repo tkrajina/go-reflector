@@ -7,9 +7,6 @@ import (
 	"strings"
 )
 
-// TODOs
-// - Most of the data needed for reflection is retrieved in constructors, but most of them can be cached for future use.
-
 type fieldListingType int
 
 const (
@@ -17,6 +14,17 @@ const (
 	fieldsFlattenAnonymous                    = iota
 	fieldsNoFlattenAnonymous                  = iota
 )
+
+var (
+	metadataCache map[reflect.Type]ObjMetadata
+	// # of metadata cached, just for testing, not threadsafe!
+	metadataCached int
+)
+
+func init() {
+	metadataCache = map[reflect.Type]ObjMetadata{}
+	metadataCached = 0
+}
 
 // ObjMetadata contains data which is always unique per Type
 type ObjMetadata struct {
@@ -207,7 +215,14 @@ func NewFromType(ty reflect.Type) *Obj {
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
-	o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
+	ty := reflect.TypeOf(obj)
+	if metadata, found := metadataCache[ty]; found {
+		o.ObjMetadata = metadata
+	} else {
+		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
+		metadataCache[ty] = o.ObjMetadata
+		metadataCached += 1
+	}
 
 	return o
 }

@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Utility to test performance of some typical operations, run with:
@@ -15,10 +17,11 @@ func TestPerformance(t *testing.T) {
 	if n <= 0 {
 		n = 1000
 	}
-	p := &Person{}
-	obj := New(p)
 	started := time.Now()
 	for i := 0; i < int(n); i++ {
+		p := &Person{}
+		obj := New(p)
+
 		obj.Field("Number").Set(i)
 		if p.Number != i {
 			panic("Should be " + string(i))
@@ -41,6 +44,13 @@ func TestPerformance(t *testing.T) {
 			panic("result should be 6")
 		}
 	}
+
+	for k := range metadataCache {
+		fmt.Println(k)
+	}
+	assert.Equal(t, 1, metadataCached, "Only 1 metadata must be cached")
+	assert.Equal(t, 1, len(metadataCache), "Only 1 metadata must be cached")
+
 	ended := time.Now()
 	fmt.Println("n=", n)
 	fmt.Println("started:", started.Format("2006-01-02 15:04:05.123"))

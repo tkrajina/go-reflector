@@ -23,7 +23,10 @@ func TestPerformance(t *testing.T) {
 		p := &Person{}
 		obj := New(p)
 
-		obj.Field("Number").Set(i)
+		err := obj.Field("Number").Set(i)
+		if err != nil {
+			panic("Should not error")
+		}
 		if p.Number != i {
 			panic("Should be " + string(i))
 		}

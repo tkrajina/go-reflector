@@ -221,7 +221,7 @@ func New(obj interface{}) *Obj {
 	} else {
 		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
 		metadataCache[ty] = o.ObjMetadata
-		metadataCached += 1
+		metadataCached++
 	}
 
 	return o
@@ -293,9 +293,8 @@ func (o Obj) IsPtr() bool {
 func (o *Obj) Field(fieldName string) *ObjField {
 	if metadata, found := o.fields[fieldName]; found {
 		return newObjField(o, metadata)
-	} else {
-		return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
 	}
+	return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
 }
 
 // Type returns the value type. If kind is invalid, this will return a zero filled reflect.Type
@@ -319,9 +318,8 @@ func (o Obj) String() string {
 func (o *Obj) Method(name string) *ObjMethod {
 	if metadata, found := o.methods[name]; found {
 		return newObjMethod(o, metadata)
-	} else {
-		return newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
 	}
+	return newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
 }
 
 // Methods returns the list of all methods

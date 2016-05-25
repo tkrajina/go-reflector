@@ -29,8 +29,11 @@ type ObjMetadata struct {
 	objType reflect.Type
 	objKind reflect.Kind
 
-	fields     map[string]ObjFieldMetadata
-	fieldNames map[fieldListingType][]string
+	fields map[string]ObjFieldMetadata
+
+	fieldNamesAll                []string
+	fieldNamesFlattenAnonymous   []string
+	fieldNamesNoFlattenAnonymous []string
 
 	methods     map[string]ObjMethodMetadata
 	methodNames []string
@@ -57,10 +60,9 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 
 	allFields := res.getFields(res.objType, fieldsAll)
 
-	res.fieldNames = map[fieldListingType][]string{}
-	res.fieldNames[fieldsAll] = allFields
-	res.fieldNames[fieldsFlattenAnonymous] = res.getFields(res.objType, fieldsFlattenAnonymous)
-	res.fieldNames[fieldsNoFlattenAnonymous] = res.getFields(res.objType, fieldsNoFlattenAnonymous)
+	res.fieldNamesAll = allFields
+	res.fieldNamesFlattenAnonymous = res.getFields(res.objType, fieldsFlattenAnonymous)
+	res.fieldNamesNoFlattenAnonymous = res.getFields(res.objType, fieldsNoFlattenAnonymous)
 
 	res.methods = map[string]ObjMethodMetadata{}
 	res.methodNames = []string{}
@@ -231,9 +233,16 @@ func (o Obj) FieldsAll() []ObjField {
 }
 
 func (o *Obj) getFields(listingType fieldListingType) []ObjField {
-	fieldNames := o.fieldNames[listingType]
-	if fieldNames == nil {
-		return []ObjField{}
+	var fieldNames []string
+	switch listingType {
+	case fieldsAll:
+		fieldNames = o.fieldNamesAll
+	case fieldsFlattenAnonymous:
+		fieldNames = o.fieldNamesFlattenAnonymous
+	case fieldsNoFlattenAnonymous:
+		fieldNames = o.fieldNamesNoFlattenAnonymous
+	default:
+		panic(fmt.Sprintf("Invalid field listing type %d", listingType))
 	}
 
 	res := make([]ObjField, len(fieldNames))

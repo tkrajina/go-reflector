@@ -125,6 +125,8 @@ Keep that in mind before deciding to use reflection.
 
 And, if you make any changes to the library, run `make test-performance` to check performance improvement/deterioration before/after your change.
 
+If you reflect the same type multiple types, **reflector** will cache as much metadata as possible **only once** and use that in future.
+
 ## Listing methods
 
     for _, method := range obj.Methods() {

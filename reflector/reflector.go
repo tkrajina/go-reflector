@@ -30,8 +30,10 @@ type ObjMetadata struct {
 	objKind reflect.Kind
 
 	fields     map[string]ObjFieldMetadata
-	methods    map[string]ObjMethodMetadata
 	fieldNames map[fieldListingType][]string
+
+	methods     map[string]ObjMethodMetadata
+	methodNames []string
 }
 
 func newObjMetadata(ty reflect.Type) *ObjMetadata {
@@ -60,9 +62,19 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 	res.fieldNames[fieldsFlattenAnonymous] = res.getFields(res.objType, fieldsFlattenAnonymous)
 	res.fieldNames[fieldsNoFlattenAnonymous] = res.getFields(res.objType, fieldsNoFlattenAnonymous)
 
-	res.fields = map[string]ObjFieldMetadata{}
-	for _, fieldName := range allFields {
-		res.fields[fieldName] = *newObjFieldMetadata(res.objType, fieldName, res)
+	res.methods = map[string]ObjMethodMetadata{}
+	res.methodNames = []string{}
+
+	if res.objKind != reflect.Invalid {
+		res.fields = map[string]ObjFieldMetadata{}
+		for _, fieldName := range allFields {
+			res.fields[fieldName] = *newObjFieldMetadata(res.objType, fieldName, res)
+		}
+		for i := 0; i < res.objType.NumMethod(); i++ {
+			method := res.objType.Method(i)
+			res.methodNames = append(res.methodNames, method.Name)
+			res.methods[method.Name] = *newObjMethodMetadata(res.objType, method.Name, res)
+		}
 	}
 
 	/*
@@ -153,6 +165,26 @@ func newObjFieldMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata)
 type ObjMethodMetadata struct {
 	name   string
 	method reflect.Method
+	valid  bool
+}
+
+func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata) *ObjMethodMetadata {
+	res := &ObjMethodMetadata{}
+
+	res.name = name
+
+	if objMetadata.objKind == reflect.Invalid {
+		res.valid = false
+	} else {
+		if method, found := objMetadata.objType.MethodByName(name); found {
+			res.method = method
+			res.valid = res.method.Func.IsValid()
+		} else {
+			res.valid = false
+		}
+	}
+
+	return res
 }
 
 // Obj is a wrapper for golang values which need to be reflected. The value can be of any kind and any type.
@@ -261,19 +293,19 @@ func (o Obj) String() string {
 
 // Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()
 func (o *Obj) Method(name string) *ObjMethod {
-	return newObjMethod(o, name)
+	if metadata, found := o.methods[name]; found {
+		return newObjMethod(o, metadata)
+	} else {
+		return newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
+	}
 }
 
 // Methods returns the list of all methods
 func (o *Obj) Methods() []ObjMethod {
-	res := []ObjMethod{}
-	if !o.IsValid() {
-		return res
-	}
-	ty := o.Type()
-	for i := 0; i < ty.NumMethod(); i++ {
-		method := ty.Method(i)
-		res = append(res, *newObjMethod(o, method.Name))
+	res := make([]ObjMethod, 0, len(o.methodNames))
+	for _, name := range o.methodNames {
+		metadata := o.methods[name]
+		res = append(res, *newObjMethod(o, metadata))
 	}
 	return res
 }
@@ -458,27 +490,16 @@ func (of *ObjField) Get() (interface{}, error) {
 
 // ObjMethod is a wrapper for an object method. The name of the method can be invalid.
 type ObjMethod struct {
-	obj   *Obj
-	valid bool
+	obj *Obj
 	ObjMethodMetadata
 }
 
-func newObjMethod(obj *Obj, name string) *ObjMethod {
+func newObjMethod(obj *Obj, objMethodMetadata ObjMethodMetadata) *ObjMethod {
 	res := &ObjMethod{
 		obj: obj,
 	}
-	res.name = name
 
-	if !res.obj.IsValid() {
-		res.valid = false
-	} else {
-		if method, found := res.obj.objType.MethodByName(name); found {
-			res.method = method
-			res.valid = res.method.Func.IsValid()
-		} else {
-			res.valid = false
-		}
-	}
+	res.ObjMethodMetadata = objMethodMetadata
 
 	return res
 }

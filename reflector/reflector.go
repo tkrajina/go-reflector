@@ -516,12 +516,10 @@ type ObjMethod struct {
 }
 
 func newObjMethod(obj *Obj, objMethodMetadata ObjMethodMetadata) *ObjMethod {
-	res := &ObjMethod{
+	return &ObjMethod{
 		obj:               obj,
 		ObjMethodMetadata: objMethodMetadata,
 	}
-
-	return res
 }
 
 // Name returns the method's name

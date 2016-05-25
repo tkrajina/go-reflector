@@ -100,7 +100,9 @@ If the method call returned an error, you can check it with:
 
 ## Performance
 
-Reflection is slow. To see how slow it is, try:
+When reflecting the same type multiple types, **reflector** will cache as much metadata as possible **only once** and use that in future.
+
+If you make any changes to the library, run `make test-performance` to check performance improvement/deterioration before/after your change.
 
     $ make test-performance
     N=1000000 go test -v ./... -run=TestPerformance
@@ -121,11 +123,7 @@ Reflection is slow. To see how slow it is, try:
     PASS
     ok      github.com/tkrajina/go-reflector/reflector      4.285s
 
-Keep that in mind before deciding to use reflection.
-
-And, if you make any changes to the library, run `make test-performance` to check performance improvement/deterioration before/after your change.
-
-If you reflect the same type multiple types, **reflector** will cache as much metadata as possible **only once** and use that in future.
+Keep those numbers in mind before deciding to use reflection :)
 
 ## Listing methods
 

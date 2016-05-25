@@ -1,5 +1,7 @@
 test:
 	go test ./...
+test-performance:
+	N=1000000 go test -v ./... -run=TestPerformance
 install: check test
 	go install ./...
 vet:

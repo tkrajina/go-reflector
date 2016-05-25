@@ -342,10 +342,9 @@ type ObjField struct {
 
 func newObjField(obj *Obj, metadata ObjFieldMetadata) *ObjField {
 	res := &ObjField{
-		obj: obj,
+		obj:              obj,
+		ObjFieldMetadata: metadata,
 	}
-
-	res.ObjFieldMetadata = metadata
 
 	if res.obj.IsStructOrPtrToStruct() {
 		if res.obj.isPtrToStruct {
@@ -518,10 +517,9 @@ type ObjMethod struct {
 
 func newObjMethod(obj *Obj, objMethodMetadata ObjMethodMetadata) *ObjMethod {
 	res := &ObjMethod{
-		obj: obj,
+		obj:               obj,
+		ObjMethodMetadata: objMethodMetadata,
 	}
-
-	res.ObjMethodMetadata = objMethodMetadata
 
 	return res
 }

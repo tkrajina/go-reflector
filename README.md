@@ -106,7 +106,7 @@ If the method call returned an error, you can check it with:
 
 ## Performance
 
-When reflecting the same type multiple types, **reflector** will cache as much metadata as possible **only once** and use that in future.
+When reflecting the same type multiple times, **reflector** will cache as much reflection metadata as possible **only once** and use that in future.
 
 If you make any changes to the library, run `make test-performance` to check performance improvement/deterioration before/after your change.
 

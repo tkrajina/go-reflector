@@ -100,7 +100,7 @@ If the method call returned an error, you can check it with:
 
 ## Performance
 
-Reflection is slow. To see how much slow it is, try:
+Reflection is slow. To see how slow it is, try:
 
     $ make test-performance
     N=1000000 go test -v ./... -run=TestPerformance

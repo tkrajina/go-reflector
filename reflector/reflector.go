@@ -201,6 +201,9 @@ func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata
 type Obj struct {
 	iface interface{}
 	ObjMetadata
+
+	cachedMethods map[string]ObjMethod
+	cachedFields  map[string]ObjField
 }
 
 // NewFromType creates a new Obj but using reflect.Type
@@ -262,8 +265,7 @@ func (o *Obj) getFields(listingType fieldListingType) []ObjField {
 
 	res := make([]ObjField, len(fieldNames))
 	for n, fieldName := range fieldNames {
-		metadata := o.fields[fieldName]
-		res[n] = *newObjField(o, metadata)
+		res[n] = *o.Field(fieldName)
 	}
 
 	return res
@@ -291,10 +293,22 @@ func (o Obj) IsPtr() bool {
 
 // Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
 func (o *Obj) Field(fieldName string) *ObjField {
-	if metadata, found := o.fields[fieldName]; found {
-		return newObjField(o, metadata)
+	if o.cachedFields == nil {
+		o.cachedFields = map[string]ObjField{}
 	}
-	return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
+	if field, found := o.cachedFields[fieldName]; found {
+		return &field
+	}
+
+	var field *ObjField
+	if metadata, found := o.fields[fieldName]; found {
+		field = newObjField(o, metadata)
+	} else {
+		field = newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
+	}
+	o.cachedFields[fieldName] = *field
+
+	return field
 }
 
 // Type returns the value type. If kind is invalid, this will return a zero filled reflect.Type
@@ -316,18 +330,26 @@ func (o Obj) String() string {
 
 // Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()
 func (o *Obj) Method(name string) *ObjMethod {
-	if metadata, found := o.methods[name]; found {
-		return newObjMethod(o, metadata)
+	if o.cachedMethods == nil {
+		o.cachedMethods = map[string]ObjMethod{}
 	}
-	return newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
+
+	var method *ObjMethod
+	if metadata, found := o.methods[name]; found {
+		method = newObjMethod(o, metadata)
+	} else {
+		method = newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
+	}
+	o.cachedMethods[name] = *method
+
+	return method
 }
 
 // Methods returns the list of all methods
 func (o *Obj) Methods() []ObjMethod {
-	res := make([]ObjMethod, 0, len(o.methodNames))
-	for _, name := range o.methodNames {
-		metadata := o.methods[name]
-		res = append(res, *newObjMethod(o, metadata))
+	res := make([]ObjMethod, len(o.methodNames))
+	for n, name := range o.methodNames {
+		res[n] = *o.Method(name)
 	}
 	return res
 }

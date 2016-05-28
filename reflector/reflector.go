@@ -262,8 +262,7 @@ func (o *Obj) getFields(listingType fieldListingType) []ObjField {
 
 	res := make([]ObjField, len(fieldNames))
 	for n, fieldName := range fieldNames {
-		metadata := o.fields[fieldName]
-		res[n] = *newObjField(o, metadata)
+		res[n] = *o.Field(fieldName)
 	}
 
 	return res
@@ -326,8 +325,7 @@ func (o *Obj) Method(name string) *ObjMethod {
 func (o *Obj) Methods() []ObjMethod {
 	res := make([]ObjMethod, 0, len(o.methodNames))
 	for _, name := range o.methodNames {
-		metadata := o.methods[name]
-		res = append(res, *newObjMethod(o, metadata))
+		res = append(res, *o.Method(name))
 	}
 	return res
 }

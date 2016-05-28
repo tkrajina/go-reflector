@@ -58,6 +58,29 @@ func TestString(t *testing.T) {
 	assert.Equal(t, New(&Person{}).Field("bu").ObjFieldMetadata, New(&Person{}).Field("bu").ObjFieldMetadata)
 }
 
+func _TestNilStringPtr(t *testing.T) {
+	assert.Equal(t, "*string", New((*string)(nil)).String())
+	assert.Equal(t, 0, len(New((*string)(nil)).Fields()))
+	assert.Equal(t, 0, len(New((*string)(nil)).Methods()))
+
+	v, err := New((*string)(nil)).Field("Bu").Get()
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
+}
+
+func TestNilStructPtr(t *testing.T) {
+	assert.Equal(t, "*reflector.Person", New((*Person)(nil)).String())
+	assert.Equal(t, 2, len(New((*Person)(nil)).Fields()))
+	assert.Equal(t, 4, len(New((*Person)(nil)).Methods()))
+
+	err := New((*Person)(nil)).Field("Number").Set(17)
+	assert.NotNil(t, err)
+
+	v, err := New((*Person)(nil)).Field("Bu").Get()
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
+}
+
 func TestListFieldsFlattened(t *testing.T) {
 	p := Person{}
 	obj := New(p)

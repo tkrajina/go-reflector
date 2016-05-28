@@ -200,6 +200,9 @@ func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata
 // Obj is a wrapper for golang values which need to be reflected. The value can be of any kind and any type.
 type Obj struct {
 	iface interface{}
+	// Value used to work with fields. The only special case is when the iface as a pointer to a struct, in
+	// that case this is the value of that struct:
+	fieldsValue reflect.Value
 	ObjMetadata
 }
 
@@ -222,6 +225,12 @@ func New(obj interface{}) *Obj {
 		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
 		metadataCache[ty] = o.ObjMetadata
 		metadataCached++
+	}
+
+	if o.isPtrToStruct {
+		o.fieldsValue = reflect.ValueOf(obj).Elem()
+	} else {
+		o.fieldsValue = reflect.ValueOf(obj)
 	}
 
 	return o
@@ -291,8 +300,12 @@ func (o Obj) IsPtr() bool {
 // Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
 func (o *Obj) Field(fieldName string) *ObjField {
 	if metadata, found := o.fields[fieldName]; found {
+		if !o.fieldsValue.IsValid() {
+			goto invalid
+		}
 		return newObjField(o, metadata)
 	}
+invalid:
 	return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
 }
 
@@ -332,8 +345,8 @@ func (o *Obj) Methods() []ObjMethod {
 
 // ObjField is a wrapper for the object's field.
 type ObjField struct {
-	obj        *Obj
-	valueField reflect.Value
+	obj   *Obj
+	value reflect.Value
 
 	ObjFieldMetadata
 }
@@ -344,12 +357,8 @@ func newObjField(obj *Obj, metadata ObjFieldMetadata) *ObjField {
 		ObjFieldMetadata: metadata,
 	}
 
-	if res.obj.IsStructOrPtrToStruct() {
-		if res.obj.isPtrToStruct {
-			res.valueField = reflect.ValueOf(res.obj.iface).Elem().FieldByName(res.name)
-		} else {
-			res.valueField = reflect.ValueOf(res.obj.iface).FieldByName(res.name)
-		}
+	if metadata.valid && res.obj.IsStructOrPtrToStruct() {
+		res.value = obj.fieldsValue.FieldByName(res.name)
 	}
 
 	return res
@@ -364,7 +373,7 @@ func (of *ObjField) assertValid() error {
 
 // IsValid checks if the fiels is valid.
 func (of *ObjField) IsValid() bool {
-	return of.valid && of.valueField.IsValid()
+	return of.valid && of.value.IsValid()
 }
 
 // Name returns the field's name
@@ -480,7 +489,7 @@ func (of *ObjField) IsAnonymous() bool {
 
 // IsSettable checks if this field is settable
 func (of *ObjField) IsSettable() bool {
-	return of.valueField.CanSet()
+	return of.value.CanSet()
 }
 
 // Set sets a value for this field or error if field is invalid (or not settable)
@@ -493,7 +502,7 @@ func (of *ObjField) Set(value interface{}) error {
 		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.iface)
 	}
 
-	of.valueField.Set(reflect.ValueOf(value))
+	of.value.Set(reflect.ValueOf(value))
 
 	return nil
 }
@@ -504,7 +513,7 @@ func (of *ObjField) Get() (interface{}, error) {
 		return nil, err
 	}
 
-	return of.valueField.Interface(), nil
+	return of.value.Interface(), nil
 }
 
 // ObjMethod is a wrapper for an object method. The name of the method can be invalid.

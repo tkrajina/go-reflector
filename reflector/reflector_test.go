@@ -43,6 +43,22 @@ type Company struct {
 	Number int `tag:"bi"`
 }
 
+// TestDoubleFields checks that there are no "double" fields (or fields shadowing)
+func TestDoubleFields(t *testing.T) {
+	structs := []interface{}{
+		Obj{},
+		ObjField{},
+		ObjMethod{},
+		ObjMetadata{},
+		ObjFieldMetadata{},
+		ObjMethodMetadata{},
+	}
+	for _, s := range structs {
+		double := New(s).FindDoubleFields()
+		assert.Equal(t, 0, len(double))
+	}
+}
+
 func TestString(t *testing.T) {
 	assert.Equal(t, "reflector.Person", New(Person{}).String())
 	assert.Equal(t, "*reflector.Person", New(&Person{}).String())

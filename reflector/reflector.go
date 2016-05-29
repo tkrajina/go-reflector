@@ -200,7 +200,7 @@ func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata
 // Obj is a wrapper for golang values which need to be reflected. The value can be of any kind and any type.
 type Obj struct {
 	iface interface{}
-	// Value used to work with fields. The only special case is when the iface as a pointer to a struct, in
+	// Value used to work with fields. The only special case is when iface is a pointer to a struct, in
 	// that case this is the value of that struct:
 	fieldsValue reflect.Value
 	ObjMetadata

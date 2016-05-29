@@ -87,11 +87,6 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 		}
 	}
 
-	/*
-		fmt.Printf("res.fieldNames=%+v\n", res.fieldNames)
-		fmt.Printf("res.fields=%+v\n", res.fields)
-	*/
-
 	return res
 }
 
@@ -179,9 +174,7 @@ type ObjMethodMetadata struct {
 }
 
 func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata) *ObjMethodMetadata {
-	res := &ObjMethodMetadata{}
-
-	res.name = name
+	res := &ObjMethodMetadata{name: name}
 
 	if objMetadata.objKind == reflect.Invalid {
 		res.valid = false
@@ -299,13 +292,11 @@ func (o Obj) IsPtr() bool {
 
 // Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
 func (o *Obj) Field(fieldName string) *ObjField {
-	if metadata, found := o.fields[fieldName]; found {
-		if !o.fieldsValue.IsValid() {
-			goto invalid
+	if o.fieldsValue.IsValid() {
+		if metadata, found := o.fields[fieldName]; found {
+			return newObjField(o, metadata)
 		}
-		return newObjField(o, metadata)
 	}
-invalid:
 	return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
 }
 

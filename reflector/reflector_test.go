@@ -74,7 +74,7 @@ func TestString(t *testing.T) {
 	assert.Equal(t, New(&Person{}).Field("bu").ObjFieldMetadata, New(&Person{}).Field("bu").ObjFieldMetadata)
 }
 
-func _TestNilStringPtr(t *testing.T) {
+func TestNilStringPtr(t *testing.T) {
 	assert.Equal(t, "*string", New((*string)(nil)).String())
 	assert.Equal(t, 0, len(New((*string)(nil)).Fields()))
 	assert.Equal(t, 0, len(New((*string)(nil)).Methods()))

@@ -148,6 +148,15 @@ func TestListFieldsAll(t *testing.T) {
 	assert.Equal(t, fields[3].Name(), "Number")
 }
 
+func TestListFieldsAnonymous(t *testing.T) {
+	p := Person{}
+	obj := New(p)
+
+	fields := obj.FieldsAnonymous()
+	assert.Equal(t, 1, len(fields))
+	assert.Equal(t, fields[0].Name(), "Address")
+}
+
 func TestListFieldsAllWithDoubleFields(t *testing.T) {
 	obj := New(Company{})
 

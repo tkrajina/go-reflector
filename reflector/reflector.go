@@ -11,6 +11,7 @@ type fieldListingType int
 
 const (
 	fieldsAll                fieldListingType = iota
+	fieldsAnonymous                           = iota
 	fieldsFlattenAnonymous                    = iota
 	fieldsNoFlattenAnonymous                  = iota
 )
@@ -40,6 +41,7 @@ type ObjMetadata struct {
 	fields map[string]ObjFieldMetadata
 
 	fieldNamesAll                []string
+	fieldNamesAnonymous          []string
 	fieldNamesFlattenAnonymous   []string
 	fieldNamesNoFlattenAnonymous []string
 
@@ -69,6 +71,7 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 	allFields := res.getFields(res.objType, fieldsAll)
 
 	res.fieldNamesAll = allFields
+	res.fieldNamesAnonymous = res.getFields(res.objType, fieldsAnonymous)
 	res.fieldNamesFlattenAnonymous = res.getFields(res.objType, fieldsFlattenAnonymous)
 	res.fieldNamesNoFlattenAnonymous = res.getFields(res.objType, fieldsNoFlattenAnonymous)
 
@@ -111,7 +114,11 @@ func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) 
 
 		k := field.Type.Kind()
 		if isExportable(field) {
-			if listingType == fieldsAll {
+			if listingType == fieldsAnonymous {
+				if field.Anonymous {
+					fields = append(fields, field.Name)
+				}
+			} else if listingType == fieldsAll {
 				fields = append(fields, field.Name)
 				if k == reflect.Struct && field.Anonymous {
 					fields = append(fields, om.getFields(field.Type, listingType)...)
@@ -249,11 +256,18 @@ func (o Obj) FieldsAll() []ObjField {
 	return o.getFields(fieldsAll)
 }
 
+// FieldsAnonymous returns only anonymous fields
+func (o Obj) FieldsAnonymous() []ObjField {
+	return o.getFields(fieldsAnonymous)
+}
+
 func (o *Obj) getFields(listingType fieldListingType) []ObjField {
 	var fieldNames []string
 	switch listingType {
 	case fieldsAll:
 		fieldNames = o.fieldNamesAll
+	case fieldsAnonymous:
+		fieldNames = o.fieldNamesAnonymous
 	case fieldsFlattenAnonymous:
 		fieldNames = o.fieldNamesFlattenAnonymous
 	case fieldsNoFlattenAnonymous:

@@ -227,11 +227,7 @@ func New(obj interface{}) *Obj {
 		metadataCached++
 	}
 
-	if o.isPtrToStruct {
-		o.fieldsValue = reflect.ValueOf(obj).Elem()
-	} else {
-		o.fieldsValue = reflect.ValueOf(obj)
-	}
+	o.fieldsValue = reflect.Indirect(reflect.ValueOf(obj))
 
 	return o
 }

@@ -75,6 +75,8 @@ Depending on which listing you want, you can use:
     fields := obj.FieldsFlattened()
     fields := obj.Fields()
 
+You can only get the list of anonymous fields with `obj.FieldsAnonymous()`.
+
 Be aware that because of anonymous structs, some field names can be returned twice!
 In most cases this is not a desired situation, but you can use **reflector** to detect such situations in your code:
 

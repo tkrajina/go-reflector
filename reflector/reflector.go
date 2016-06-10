@@ -10,10 +10,10 @@ import (
 type fieldListingType int
 
 const (
-	fieldsAll                fieldListingType = iota
-	fieldsAnonymous                           = iota
-	fieldsFlattenAnonymous                    = iota
-	fieldsNoFlattenAnonymous                  = iota
+	fieldsAll fieldListingType = iota
+	fieldsAnonymous
+	fieldsFlattenAnonymous
+	fieldsNoFlattenAnonymous
 )
 
 var (

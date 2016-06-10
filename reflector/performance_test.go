@@ -10,80 +10,80 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func stopwatch(n int, title string) func() {
+	start := time.Now()
+	return func() {
+		fmt.Println(title)
+		fmt.Printf("%12s= %d\n", "n", n)
+		const dateFormat = "2006-01-02 15:04:05.123"
+		fmt.Printf("%12s: %s\n", "started", start.Format(dateFormat))
+		fmt.Printf("%12s: %fs\n", "duration", time.Since(start).Seconds())
+	}
+}
+
+func performanceN(envN string) int {
+	n, _ := strconv.ParseInt(envN, 10, 64)
+	const defaultN = 1000
+	if n < 1 {
+		n = defaultN
+	}
+	return int(n)
+}
+
 // Utility to test performance of some typical operations, run with:
 // N=1000000 go test -v ./... -run=TestPerformance
-// Iy you change anything here, change TestPerformancePlain too!
-func TestPerformance(t *testing.T) {
-	n, _ := strconv.ParseInt(os.Getenv("N"), 10, 64)
-	if n <= 0 {
-		n = 1000
-	}
-	started := time.Now()
-	for i := 0; i < int(n); i++ {
+// Iy you change anything here, change TestPerformance_plain too!
+func TestPerformance_reflection(t *testing.T) {
+	n := performanceN(os.Getenv("N"))
+	defer stopwatch(n, "WITH REFLECTION")()
+	for i := 0; i < n; i++ {
 		p := &Person{}
 		obj := New(p)
 
 		err := obj.Field("Number").Set(i)
 		if err != nil {
-			panic("Should not error")
+			t.Fatal("Should not error")
 		}
 		if p.Number != i {
-			panic("Should be " + string(i))
+			t.Fatalf("Should be %d", i)
 		}
 		number, err := obj.Field("Number").Get()
 		if err != nil {
-			panic("Number is valid")
+			t.Fatal("Number is valid")
 		}
 		if number.(int) != i {
-			panic("Should be " + string(i))
+			t.Fatalf("Should be %d", i)
 		}
 		res, err := obj.Method("Add").Call(1, 2, 3)
 		if err != nil {
-			panic("shouldn't be an error")
+			t.Fatal("shouldn't be an error")
 		}
 		if res.IsError() {
-			panic("method shouldn't return an error")
+			t.Fatal("method shouldn't return an error")
 		}
 		if len(res.Result) != 1 && res.Result[0].(int) != 6 {
-			panic("result should be 6")
+			t.Fatal("result should be 6")
 		}
 	}
 
 	assert.Equal(t, 1, metadataCached, "Only 1 metadata must be cached")
 	assert.Equal(t, 1, len(metadataCache), "Only 1 metadata must be cached")
-
-	ended := time.Now()
-	fmt.Println("WITH REFLECTION")
-	fmt.Println("    n=", n)
-	fmt.Println("    started:", started.Format("2006-01-02 15:04:05.123"))
-	fmt.Println("    ended:", ended.Format("2006-01-02 15:04:05.123"))
-	fmt.Printf("    duration: %fs\n", ended.Sub(started).Seconds())
 }
 
-func TestPerformancePlain(t *testing.T) {
-	n, _ := strconv.ParseInt(os.Getenv("N"), 10, 64)
-	if n <= 0 {
-		n = 1000
-	}
-	started := time.Now()
-	for i := 0; i < int(n); i++ {
+func TestPerformance_plain(t *testing.T) {
+	n := performanceN(os.Getenv("N"))
+	defer stopwatch(n, "WITHOUT REFLECTION")()
+	for i := 0; i < n; i++ {
 		p := &Person{}
 
 		p.Number = i
 		number := p.Number
 		if number != i {
-			panic("Should be " + string(i))
+			t.Fatalf("Should be %d", i)
 		}
 		res := p.Add(1, 2, 3)
 		if res != 6 {
-			panic("result should be 6")
+			t.Fatal("result should be 6")
 		}
 	}
-
-	ended := time.Now()
-	fmt.Println("WITHOUT REFLECTION")
-	fmt.Println("    n=", n)
-	fmt.Println("    started:", started.Format("2006-01-02 15:04:05.123"))
-	fmt.Println("    ended:", ended.Format("2006-01-02 15:04:05.123"))
-	fmt.Printf("    duration: %fs\n", ended.Sub(started).Seconds())
 }

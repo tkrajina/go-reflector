@@ -280,14 +280,15 @@ func (o *Obj) getFields(listingType fieldListingType) []ObjField {
 	return res
 }
 
-// FindDoubleFields checks if this object has declared multiple fields with a same name (by checking recursively Anonymous
-// fields and their fields)
+// FindDoubleFields checks if this object has declared
+// multiple fields with a same name
+// (by checking recursively Anonymous fields and their fields)
 func (o Obj) FindDoubleFields() []string {
 	fields := map[string]int{}
 	res := []string{}
 	for _, f := range o.FieldsAll() {
-		counter := 0
-		if counter := fields[f.name]; counter == 1 {
+		counter := fields[f.name]
+		if counter == 1 {
 			res = append(res, f.name)
 		}
 		fields[f.name] = counter + 1

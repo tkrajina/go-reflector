@@ -363,20 +363,22 @@ func TestMethodsValidityOnNonPtr(t *testing.T) {
 	}
 }
 
-func TestCallMethodWithoutErrResult(t *testing.T) {
+func testCallMethod(t *testing.T, callValue bool, lenResult int) bool {
 	obj := New(&Person{})
-	res, err := obj.Method("ReturnsError").Call(true)
+	res, err := obj.Method("ReturnsError").Call(callValue)
 	assert.Nil(t, err)
-	assert.Equal(t, len(res.Result), 3)
-	assert.True(t, res.IsError())
+	assert.Equal(t, len(res.Result), lenResult)
+	return res.IsError()
+}
+
+func TestCallMethodWithoutErrResult(t *testing.T) {
+	isErr := testCallMethod(t, true, 3)
+	assert.True(t, isErr)
 }
 
 func TestCallMethodWithErrResult(t *testing.T) {
-	obj := New(&Person{})
-	res, err := obj.Method("ReturnsError").Call(false)
-	assert.Nil(t, err)
-	assert.Equal(t, len(res.Result), 3)
-	assert.False(t, res.IsError())
+	isErr := testCallMethod(t, false, 3)
+	assert.False(t, isErr)
 }
 
 func TestTag(t *testing.T) {

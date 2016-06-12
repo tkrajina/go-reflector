@@ -98,6 +98,22 @@ func (om *ObjMetadata) IsStructOrPtrToStruct() bool {
 	return om.isStruct || om.isPtrToStruct
 }
 
+func (om *ObjMetadata) IsSlice() bool {
+	return om.objKind == reflect.Slice
+}
+
+func (om *ObjMetadata) IsArray() bool {
+	return om.objKind == reflect.Array
+}
+
+func (om *ObjMetadata) IsSliceOrArray() bool {
+	return om.IsSlice() || om.IsArray()
+}
+
+func (om *ObjMetadata) IsMap() bool {
+	return om.objKind == reflect.Map
+}
+
 func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) []string {
 	var fields []string
 
@@ -342,6 +358,27 @@ func (o *Obj) Methods() []ObjMethod {
 		res = append(res, *o.Method(name))
 	}
 	return res
+}
+
+// Len returns the size in case this type supports len()
+func (om *Obj) Len() int {
+	return om.fieldsValue.Len()
+}
+
+func GetSliceOrArrayValue(i int) interface{} {
+}
+
+func SetSliceOrArrayValue(i int, value interface{}) interface{} {
+}
+
+func (om *ObjMetadata) GetMapValue(key interface{}) {
+	if !om.IsMap() {
+		return nil, false
+	}
+	return om.fieldsValue.MapIndex(key)
+}
+
+func (om *ObjMetadata) SetMapValue(key, value interface{}) {
 }
 
 // ObjField is a wrapper for the object's field.

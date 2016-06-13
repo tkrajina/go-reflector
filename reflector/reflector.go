@@ -536,32 +536,41 @@ func (om *ObjMethod) Name() string {
 	return om.name
 }
 
-// InTypes returns an slice with this method's input types.
-func (om *ObjMethod) InTypes() []reflect.Type {
-	method := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
-	if !method.IsValid() {
+const (
+	onlyInTypes  = 0
+	onlyOutTypes = 1
+)
+
+func (om *ObjMethod) methodTypes(kind int) []reflect.Type {
+	m := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
+	if !m.IsValid() {
 		return []reflect.Type{}
 	}
-	ty := method.Type()
-	out := make([]reflect.Type, ty.NumIn())
-	for i := 0; i < ty.NumIn(); i++ {
-		out[i] = ty.In(i)
+	ty := m.Type()
+
+	// inTypes are default
+	tyNum := ty.NumIn()
+	tyFn := ty.In
+	if kind == onlyOutTypes {
+		tyNum = ty.NumOut()
+		tyFn = ty.Out
+	}
+
+	out := make([]reflect.Type, tyNum)
+	for i := 0; i < tyNum; i++ {
+		out[i] = tyFn(i)
 	}
 	return out
 }
 
+// InTypes returns an slice with this method's input types.
+func (om *ObjMethod) InTypes() []reflect.Type {
+	return om.methodTypes(onlyInTypes)
+}
+
 // OutTypes returns an slice with this method's output types.
 func (om *ObjMethod) OutTypes() []reflect.Type {
-	method := reflect.ValueOf(om.obj.iface).MethodByName(om.name)
-	if !method.IsValid() {
-		return []reflect.Type{}
-	}
-	ty := method.Type()
-	out := make([]reflect.Type, ty.NumOut())
-	for i := 0; i < ty.NumOut(); i++ {
-		out[i] = ty.Out(i)
-	}
-	return out
+	return om.methodTypes(onlyOutTypes)
 }
 
 // IsValid returns this method's validity

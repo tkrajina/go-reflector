@@ -100,22 +100,20 @@ func (om *ObjMetadata) IsStructOrPtrToStruct() bool {
 
 func (om *ObjMetadata) appendFields(fields []string, field reflect.StructField, listingType fieldListingType) []string {
 	k := field.Type.Kind()
-	if isExportable(field) {
-		if listingType == fieldsAnonymous {
-			if field.Anonymous {
-				fields = append(fields, field.Name)
-			}
-		} else if listingType == fieldsAll {
+	if listingType == fieldsAnonymous {
+		if field.Anonymous {
 			fields = append(fields, field.Name)
-			if k == reflect.Struct && field.Anonymous {
-				fields = append(fields, om.getFields(field.Type, listingType)...)
-			}
+		}
+	} else if listingType == fieldsAll {
+		fields = append(fields, field.Name)
+		if k == reflect.Struct && field.Anonymous {
+			fields = append(fields, om.getFields(field.Type, listingType)...)
+		}
+	} else {
+		if listingType == fieldsFlattenAnonymous && k == reflect.Struct && field.Anonymous {
+			fields = append(fields, om.getFields(field.Type, listingType)...)
 		} else {
-			if listingType == fieldsFlattenAnonymous && k == reflect.Struct && field.Anonymous {
-				fields = append(fields, om.getFields(field.Type, listingType)...)
-			} else {
-				fields = append(fields, field.Name)
-			}
+			fields = append(fields, field.Name)
 		}
 	}
 	return fields
@@ -134,7 +132,9 @@ func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) 
 
 	for i := 0; i < ty.NumField(); i++ {
 		f := ty.Field(i)
-		fields = om.appendFields(fields, f, listingType)
+		if isExportable(f) {
+			fields = om.appendFields(fields, f, listingType)
+		}
 	}
 
 	return fields

@@ -27,7 +27,7 @@ func init() {
 	metadataCached = 0
 }
 
-// ObjMetadata contains data which is always unique per Type
+// ObjMetadata contains data which is always unique per Type.
 type ObjMetadata struct {
 	isStruct      bool
 	isPtrToStruct bool
@@ -93,7 +93,7 @@ func newObjMetadata(ty reflect.Type) *ObjMetadata {
 	return res
 }
 
-// IsStructOrPtrToStruct checks if the value is a struct or a pointer to a struct
+// IsStructOrPtrToStruct checks if the value is a struct or a pointer to a struct.
 func (om *ObjMetadata) IsStructOrPtrToStruct() bool {
 	return om.isStruct || om.isPtrToStruct
 }
@@ -140,7 +140,7 @@ func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) 
 	return fields
 }
 
-// ObjFieldMetadata contains data which is always unique per Type/Field
+// ObjFieldMetadata contains data which is always unique per Type/Field.
 type ObjFieldMetadata struct {
 	name string
 
@@ -149,7 +149,8 @@ type ObjFieldMetadata struct {
 	fieldKind reflect.Kind
 	fieldType reflect.Type
 
-	// Valid here is not yet the final info about an actual field validity, because value field still have .IsValid()
+	// Valid here is not yet the final info about an actual field validity,
+	// because value field still have .IsValid()
 	valid bool
 }
 
@@ -177,7 +178,8 @@ func newObjFieldMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata)
 	return res
 }
 
-// ObjMethodMetadata contains data which is always unique per Type/Method
+// ObjMethodMetadata contains data
+// which is always unique per Type/Method.
 type ObjMethodMetadata struct {
 	name   string
 	method reflect.Method
@@ -201,7 +203,8 @@ func newObjMethodMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata
 	return res
 }
 
-// Obj is a wrapper for golang values which need to be reflected. The value can be of any kind and any type.
+// Obj is a wrapper for golang values which need to be reflected.
+// The value can be of any kind and any type.
 type Obj struct {
 	iface interface{}
 	// Value used to work with fields. The only special case is when iface is a pointer to a struct, in
@@ -210,7 +213,7 @@ type Obj struct {
 	ObjMetadata
 }
 
-// NewFromType creates a new Obj but using reflect.Type
+// NewFromType creates a new Obj but using reflect.Type.
 func NewFromType(ty reflect.Type) *Obj {
 	if ty == nil {
 		return New(nil)
@@ -218,7 +221,7 @@ func NewFromType(ty reflect.Type) *Obj {
 	return New(reflect.New(ty).Interface())
 }
 
-// New initializes a new Obj wrapper
+// New initializes a new Obj wrapper.
 func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
@@ -236,27 +239,31 @@ func New(obj interface{}) *Obj {
 	return o
 }
 
-// IsValid checks if the underlying objects is valid. Nil is an invalid value, for example.
+// IsValid checks if the underlying objects is valid.
+// Nil is an invalid value, for example.
 func (o *Obj) IsValid() bool {
 	return o.objKind != reflect.Invalid
 }
 
-// Fields returns fields. Don't list fields inside Anonymous fields as distinct fields
+// Fields returns fields.
+// Don't list fields inside Anonymous fields as distinct fields.
 func (o *Obj) Fields() []ObjField {
 	return o.getFields(fieldsNoFlattenAnonymous)
 }
 
-// FieldsFlattened returns fields. Will not list Anonymous fields but it will list fields declared in those anonymous fields
+// FieldsFlattened returns fields.
+// Will not list Anonymous fields but it will list fields declared in those anonymous fields.
 func (o Obj) FieldsFlattened() []ObjField {
 	return o.getFields(fieldsFlattenAnonymous)
 }
 
-// FieldsAll returns fields. List both anonymous fields and fields declared inside anonymous fields.
+// FieldsAll returns fields.
+// List both anonymous fields and fields declared inside anonymous fields.
 func (o Obj) FieldsAll() []ObjField {
 	return o.getFields(fieldsAll)
 }
 
-// FieldsAnonymous returns only anonymous fields
+// FieldsAnonymous returns only anonymous fields.
 func (o Obj) FieldsAnonymous() []ObjField {
 	return o.getFields(fieldsAnonymous)
 }
@@ -285,7 +292,7 @@ func (o *Obj) getFields(listingType fieldListingType) []ObjField {
 }
 
 // FindDoubleFields checks if this object has declared
-// multiple fields with a same name
+// multiple fields with a same name.
 // (by checking recursively Anonymous fields and their fields)
 func (o Obj) FindDoubleFields() []string {
 	fields := map[string]int{}
@@ -300,12 +307,14 @@ func (o Obj) FindDoubleFields() []string {
 	return res
 }
 
-// IsPtr checks if the value is a pointer
+// IsPtr checks if the value is a pointer.
 func (o Obj) IsPtr() bool {
 	return o.objKind == reflect.Ptr
 }
 
-// Field get a field wrapper. Note that the field name can be invalid. You can check the field validity using ObjField.IsValid()
+// Field get a field wrapper.
+// Note that the field name can be invalid.
+// You can check the field validity using ObjField.IsValid().
 func (o *Obj) Field(fieldName string) *ObjField {
 	if o.fieldsValue.IsValid() {
 		if metadata, found := o.fields[fieldName]; found {
@@ -315,12 +324,13 @@ func (o *Obj) Field(fieldName string) *ObjField {
 	return newObjField(o, ObjFieldMetadata{name: fieldName, valid: false, fieldKind: reflect.Invalid})
 }
 
-// Type returns the value type. If kind is invalid, this will return a zero filled reflect.Type
+// Type returns the value type.
+// If kind is invalid, this will return a zero filled reflect.Type.
 func (o Obj) Type() reflect.Type {
 	return o.objType
 }
 
-// Kind returns the value's kind
+// Kind returns the value's kind.
 func (o Obj) Kind() reflect.Kind {
 	return o.objKind
 }
@@ -332,7 +342,8 @@ func (o Obj) String() string {
 	return o.objType.String()
 }
 
-// Method returns a new method wrapper. The method name can be invalid, check the method validity with ObjMethod.IsValid()
+// Method returns a new method wrapper.
+// The method name can be invalid, check the method validity with ObjMethod.IsValid().
 func (o *Obj) Method(name string) *ObjMethod {
 	if metadata, found := o.methods[name]; found {
 		return newObjMethod(o, metadata)
@@ -340,7 +351,7 @@ func (o *Obj) Method(name string) *ObjMethod {
 	return newObjMethod(o, ObjMethodMetadata{name: name, valid: false})
 }
 
-// Methods returns the list of all methods
+// Methods returns the list of all methods.
 func (o *Obj) Methods() []ObjMethod {
 	res := make([]ObjMethod, 0, len(o.methodNames))
 	for _, name := range o.methodNames {
@@ -382,22 +393,23 @@ func (of *ObjField) IsValid() bool {
 	return of.valid && of.value.IsValid()
 }
 
-// Name returns the field's name
+// Name returns the field's name.
 func (of *ObjField) Name() string {
 	return of.name
 }
 
-// Kind returns the field's kind
+// Kind returns the field's kind.
 func (of *ObjField) Kind() reflect.Kind {
 	return of.fieldKind
 }
 
-// Type returns the field's type
+// Type returns the field's type.
 func (of *ObjField) Type() reflect.Type {
 	return of.fieldType
 }
 
-// Tag returns the value of this specific tag or error if the field is invalid
+// Tag returns the value of this specific tag
+// or error if the field is invalid.
 func (of *ObjField) Tag(tag string) (string, error) {
 	if err := of.assertValid(); err != nil {
 		return "", err
@@ -405,7 +417,7 @@ func (of *ObjField) Tag(tag string) (string, error) {
 	return of.structField.Tag.Get(tag), nil
 }
 
-// Tags returns the map of all fields or error (if the field is invalid)
+// Tags returns the map of all fields or error for invalid field.
 func (of *ObjField) Tags() (map[string]string, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
@@ -459,21 +471,12 @@ func (of *ObjField) Tags() (map[string]string, error) {
 			return nil, fmt.Errorf("Cannot unquote tag %s in %T.%s: %s", name, of.obj.iface, of.name, err.Error())
 		}
 		res[name] = value
-		/*
-			if key == name {
-				value, err := strconv.Unquote(qvalue)
-				if err != nil {
-					break
-				}
-				return value
-			}
-		*/
 	}
 
 	return res, nil
 }
 
-// TagExpanded returns the tag value "expanded" with commas
+// TagExpanded returns the tag value "expanded" with commas.
 func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
@@ -481,7 +484,7 @@ func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	return strings.Split(of.structField.Tag.Get(tag), ","), nil
 }
 
-// IsAnonymous checks if this is an anonymous (embedded) field
+// IsAnonymous checks if this is an anonymous (embedded) field.
 func (of *ObjField) IsAnonymous() bool {
 	if err := of.assertValid(); err != nil {
 		return false
@@ -493,12 +496,12 @@ func (of *ObjField) IsAnonymous() bool {
 	return field.Anonymous
 }
 
-// IsSettable checks if this field is settable
+// IsSettable checks if this field is settable.
 func (of *ObjField) IsSettable() bool {
 	return of.value.CanSet()
 }
 
-// Set sets a value for this field or error if field is invalid (or not settable)
+// Set sets a value for this field or error if field is invalid (or not settable).
 func (of *ObjField) Set(value interface{}) error {
 	if err := of.assertValid(); err != nil {
 		return err
@@ -513,7 +516,7 @@ func (of *ObjField) Set(value interface{}) error {
 	return nil
 }
 
-// Get gets the field value (of error if field is invalid)
+// Get gets the field value of error if field is invalid).
 func (of *ObjField) Get() (interface{}, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
@@ -522,7 +525,8 @@ func (of *ObjField) Get() (interface{}, error) {
 	return of.value.Interface(), nil
 }
 
-// ObjMethod is a wrapper for an object method. The name of the method can be invalid.
+// ObjMethod is a wrapper for an object method.
+// The name of the method can be invalid.
 type ObjMethod struct {
 	obj *Obj
 	ObjMethodMetadata
@@ -535,7 +539,7 @@ func newObjMethod(obj *Obj, objMethodMetadata ObjMethodMetadata) *ObjMethod {
 	}
 }
 
-// Name returns the method's name
+// Name returns the method's name.
 func (om *ObjMethod) Name() string {
 	return om.name
 }
@@ -577,12 +581,13 @@ func (om *ObjMethod) OutTypes() []reflect.Type {
 	return om.methodTypes(onlyOutTypes)
 }
 
-// IsValid returns this method's validity
+// IsValid returns this method's validity.
 func (om *ObjMethod) IsValid() bool {
 	return om.valid
 }
 
-// Call calls this method. Note that in the error returning value is not the error from the method call
+// Call calls this method.
+// Note that in the error returning value is not the error from the method call.
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	if !om.obj.IsValid() {
 		return nil, fmt.Errorf("Invalid object type %T for method %s", om.obj.iface, om.name)
@@ -603,7 +608,7 @@ func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	return newCallResult(res), nil
 }
 
-// CallResult is a wrapper of a method call result
+// CallResult is a wrapper of a method call result.
 type CallResult struct {
 	Result []interface{}
 	Error  error
@@ -623,7 +628,7 @@ func newCallResult(res []interface{}) *CallResult {
 	return cr
 }
 
-// IsError checks if the last value is a non-nil error
+// IsError checks if the last value is a non-nil error.
 func (cr *CallResult) IsError() bool {
 	return cr.Error != nil
 }

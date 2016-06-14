@@ -417,6 +417,99 @@ func (of *ObjField) Tag(tag string) (string, error) {
 	return of.structField.Tag.Get(tag), nil
 }
 
+func tagName(tag reflect.StructTag) (reflect.StructTag, string, bool) {
+	// Scan to colon. A space, a quote or a control character is a syntax error.
+	// Strictly speaking, control chars include the range [0x7f, 0x9f], not just
+	// [0x00, 0x1f], but in practice, we ignore the multi-byte control characters
+	// as it is simpler to inspect the tag's bytes than the tag's runes.
+	var (
+		i    int
+		name string
+	)
+	for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != 0x7f {
+		i++
+	}
+	if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
+		return tag, name, false
+	}
+	name = string(tag[:i])
+	tag = tag[i+1:]
+
+	return tag, name, true
+}
+
+func tagValue(tag reflect.StructTag) (reflect.StructTag, string, bool) {
+	// Scan quoted string to find value.
+	var (
+		i      = 1
+		qvalue string
+	)
+	for i < len(tag) && tag[i] != '"' {
+		if tag[i] == '\\' {
+			i++
+		}
+		i++
+	}
+
+	if i >= len(tag) {
+		return tag, qvalue, false
+	}
+	qvalue = string(tag[:i+1])
+	tag = tag[i+1:]
+
+	return tag, qvalue, true
+
+}
+
+// Tags returns the map of all fields or error for invalid field.
+func (of *ObjField) Tags() (map[string]string, error) {
+	if err := of.assertValid(); err != nil {
+		return nil, err
+	}
+
+	tag := of.structField.Tag
+
+	all := map[string]string{}
+	// This code is copied/modified from: reflect/type.go:
+	for tag != "" {
+		// Skip leading space.
+		i := 0
+		for i < len(tag) && tag[i] == ' ' {
+			i++
+		}
+		tag = tag[i:]
+		if tag == "" {
+			break
+		}
+
+		var (
+			name string
+			ok   bool
+		)
+
+		tag, name, ok = tagName(tag)
+		if !ok {
+			break
+		}
+
+		var qvalue string
+
+		tag, qvalue, ok = tagValue(tag)
+		if !ok {
+			break
+		}
+
+		value, err := strconv.Unquote(qvalue)
+		if err != nil {
+			return nil, fmt.Errorf("Cannot unquote tag %s in %T.%s: %s", name, of.obj.iface, of.name, err)
+		}
+		all[name] = value
+	}
+
+	return all, nil
+}
+
+/*
 // Tags returns the map of all fields or error for invalid field.
 func (of *ObjField) Tags() (map[string]string, error) {
 	if err := of.assertValid(); err != nil {
@@ -475,6 +568,7 @@ func (of *ObjField) Tags() (map[string]string, error) {
 
 	return res, nil
 }
+*/
 
 // TagExpanded returns the tag value "expanded" with commas.
 func (of *ObjField) TagExpanded(tag string) ([]string, error) {

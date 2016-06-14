@@ -146,12 +146,12 @@ type ObjFieldMetadata struct {
 
 	structField reflect.StructField
 
-	fieldKind reflect.Kind
-	fieldType reflect.Type
-
 	// Valid here is not yet the final info about an actual field validity,
 	// because value field still have .IsValid()
 	valid bool
+
+	fieldKind reflect.Kind
+	fieldType reflect.Type
 }
 
 func newObjFieldMetadata(ty reflect.Type, name string, objMetadata *ObjMetadata) *ObjFieldMetadata {

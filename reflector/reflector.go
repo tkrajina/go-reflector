@@ -132,9 +132,7 @@ func (om *ObjMetadata) getFields(ty reflect.Type, listingType fieldListingType) 
 
 	for i := 0; i < ty.NumField(); i++ {
 		f := ty.Field(i)
-		if isExportable(f) {
-			fields = om.appendFields(fields, f, listingType)
-		}
+		fields = om.appendFields(fields, f, listingType)
 	}
 
 	return fields
@@ -496,6 +494,10 @@ func (of *ObjField) IsAnonymous() bool {
 	return field.Anonymous
 }
 
+func (of *ObjField) IsExported() bool {
+	return of.structField.PkgPath == ""
+}
+
 // IsSettable checks if this field is settable.
 func (of *ObjField) IsSettable() bool {
 	return of.value.CanSet()
@@ -520,6 +522,9 @@ func (of *ObjField) Set(value interface{}) error {
 func (of *ObjField) Get() (interface{}, error) {
 	if err := of.assertValid(); err != nil {
 		return nil, err
+	}
+	if !of.IsExported() {
+		return nil, fmt.Errorf("Cannot read unexported field %T.%s", of.obj.iface, of.name)
 	}
 
 	return of.value.Interface(), nil
@@ -631,8 +636,4 @@ func newCallResult(res []interface{}) *CallResult {
 // IsError checks if the last value is a non-nil error.
 func (cr *CallResult) IsError() bool {
 	return cr.Error != nil
-}
-
-func isExportable(field reflect.StructField) bool {
-	return field.PkgPath == ""
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tkrajina/go-reflector/reflector/tmp"
 )
 
 type Address struct {
@@ -510,4 +511,41 @@ func TestInnerStruct(t *testing.T) {
 	// This is not an anonymous struct, so fields are always the same:
 	assert.Equal(t, 2, len(obj.FieldsAll()))
 	assert.Equal(t, 2, len(obj.FieldsFlattened()))
+}
+
+func TestExportedUnexported(t *testing.T) {
+	obj := New(&tmp.TestStruct{})
+	assert.Equal(t, "_", obj.Fields()[0].Name())
+	assert.False(t, obj.Fields()[0].IsExported())
+
+	assert.Equal(t, "Exported", obj.Fields()[1].Name())
+	assert.True(t, obj.Fields()[1].IsExported())
+
+	assert.Equal(t, "unexported", obj.Fields()[2].Name())
+	assert.False(t, obj.Fields()[2].IsExported())
+
+	err := obj.Field("Exported").Set("aaa")
+	assert.Nil(t, err)
+
+	err = obj.Field("unexported").Set(1777)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "not settable")
+
+	value, err := obj.Field("unexported").Get()
+	assert.NotNil(t, err)
+	assert.Nil(t, value)
+	assert.Contains(t, err.Error(), "Cannot read unexported field")
+
+	// But tags on unexported fields are still readable:
+	{
+		tags, err := obj.Field("_").Tags()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(tags))
+		assert.Equal(t, "ba", tags["bu"])
+	}
+	{
+		tags, err := obj.Field("unexported").Tags()
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(tags))
+	}
 }

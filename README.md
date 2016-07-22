@@ -85,6 +85,8 @@ In most cases this is not a desired situation, but you can use **reflector** to 
         fmt.Println("Detected multiple fields with same name:", doubleDeclaredFields)
     }
 
+The field listing will contain both exported and unexported fields. Unexported fields are not gettable/settable, but their tags are readable.
+
 ## Calling methods
 
 	obj := reflector.New(&Person{})

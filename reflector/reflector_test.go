@@ -549,3 +549,67 @@ func TestExportedUnexported(t *testing.T) {
 		assert.Equal(t, 2, len(tags))
 	}
 }
+
+func TestArray(t *testing.T) {
+	arr := []int{2, 3, 4}
+	obj := New(arr)
+	assert.Equal(t, 0, len(obj.FieldsAll()))
+	assert.False(t, obj.IsArray())
+	assert.True(t, obj.IsSlice())
+	assert.False(t, obj.IsMap())
+
+	l, err := obj.Len()
+	assert.Nil(t, err)
+	assert.Equal(t, 3, l)
+
+	element, err := obj.GetElement(0)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, element)
+}
+
+func TestStringAsArray(t *testing.T) {
+	arr := "qwe"
+	obj := New(arr)
+	assert.Equal(t, 0, len(obj.FieldsAll()))
+	assert.False(t, obj.IsArray())
+	assert.True(t, obj.IsSlice())
+	assert.False(t, obj.IsMap())
+
+	l, err := obj.Len()
+	assert.Nil(t, err)
+	assert.Equal(t, 3, l)
+
+	element, err := obj.GetElement(0)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, element)
+}
+
+func TestMap(t *testing.T) {
+	m := map[string]int{
+		"a":  1,
+		"bb": 17,
+	}
+
+	obj := New(m)
+	assert.Equal(t, 2, len(obj.FieldsAll()))
+	assert.False(t, obj.IsArray())
+	assert.False(t, obj.IsSlice())
+	assert.True(t, obj.IsMap())
+
+	elem, err := obj.GetElement("a")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, elem)
+}
+
+func TestFunction(t *testing.T) {
+	// TODO
+	f := func(a, b int) int { return a + b }
+	obj := New(f)
+	assert.Equal(t, 0, len(obj.FieldsAll()))
+
+	assert.True(t, obj.IsFunction())
+
+	res, err := obj.Call(1, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, res)
+}

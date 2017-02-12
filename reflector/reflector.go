@@ -310,6 +310,51 @@ func (o Obj) IsPtr() bool {
 	return o.objKind == reflect.Ptr
 }
 
+func (o Obj) GetElement(key interface{}) (interface{}, error) {
+	if o.IsSlice() || o.IsArray() {
+	} else if o.IsMap() {
+		return o.fieldsValue.MapIndex(reflect.ValueOf(key)).Interface(), nil
+	}
+	return nil, fmt.Errorf("Object of type %s has no gettable elements", o.Type().Name())
+}
+
+func (o *Obj) SetElement(key interface{}, value interface{}) error {
+	if o.IsSlice() || o.IsArray() {
+	} else if o.IsMap() {
+	}
+	return fmt.Errorf("Object of type %s has no settable elements", o.Type().Name())
+}
+
+func (o *Obj) Call(args ...interface{}) (interface{}, error) {
+	if o.IsFunction() {
+	}
+	return nil, fmt.Errorf("Not a function: %s", o.Type().Name())
+}
+
+func (o Obj) IsSlice() bool {
+	return o.IsOfKind(reflect.Slice)
+}
+
+func (o Obj) IsArray() bool {
+	return o.IsOfKind(reflect.Array)
+}
+
+func (o Obj) IsMap() bool {
+	return o.IsOfKind(reflect.Map)
+}
+
+func (o Obj) IsFunction() bool {
+	return o.IsOfKind(reflect.Func)
+}
+
+func (o Obj) IsOfKind(kind reflect.Kind) bool {
+	return o.Kind() == kind
+}
+
+func (o Obj) Len() (int, error) {
+	return 0, fmt.Errorf("Object of type %s has no elements/length", o.Type().Name())
+}
+
 // Field get a field wrapper.
 // Note that the field name can be invalid.
 // You can check the field validity using ObjField.IsValid().

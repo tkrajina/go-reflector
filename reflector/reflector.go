@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 type fieldListingType int
@@ -24,6 +25,16 @@ var (
 func init() {
 	metadataCache = map[reflect.Type]ObjMetadata{}
 	metadataCached = 0
+}
+
+var updateCacheMutex sync.Mutex
+
+func updateCache(ty reflect.Type, o *Obj) {
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
+
+	metadataCache[ty] = o.ObjMetadata
+	metadataCached++
 }
 
 // ObjMetadata contains data which is always unique per Type.
@@ -227,8 +238,7 @@ func New(obj interface{}) *Obj {
 		o.ObjMetadata = metadata
 	} else {
 		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))
-		metadataCache[ty] = o.ObjMetadata
-		metadataCached++
+		updateCache(ty, o)
 	}
 
 	o.fieldsValue = reflect.Indirect(reflect.ValueOf(obj))

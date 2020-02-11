@@ -1,7 +1,7 @@
 test:
-	go test ./...
+	go test -race ./...
 test-performance:
-	N=1000000 go test -v ./... -run=TestPerformance
+	N=1000000 go test -race -v ./... -run=TestPerformance
 install: check test
 	go install ./...
 vet:

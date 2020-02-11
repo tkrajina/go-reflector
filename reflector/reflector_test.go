@@ -46,6 +46,7 @@ type Company struct {
 
 // TestDoubleFields checks that there are no "double" fields (or fields shadowing)
 func TestDoubleFields(t *testing.T) {
+	t.Parallel()
 	structs := []interface{}{
 		Obj{},
 		ObjField{},
@@ -61,6 +62,7 @@ func TestDoubleFields(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "reflector.Person", New(Person{}).String())
 	assert.Equal(t, "*reflector.Person", New(&Person{}).String())
 	assert.Equal(t, "nil", New(nil).String())
@@ -76,6 +78,7 @@ func TestString(t *testing.T) {
 }
 
 func TestNilStringPtr(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "*string", New((*string)(nil)).String())
 	assert.Equal(t, 0, len(New((*string)(nil)).Fields()))
 	assert.Equal(t, 0, len(New((*string)(nil)).Methods()))
@@ -86,6 +89,7 @@ func TestNilStringPtr(t *testing.T) {
 }
 
 func TestNilStructPtr(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "*reflector.Person", New((*Person)(nil)).String())
 	assert.Equal(t, 2, len(New((*Person)(nil)).Fields()))
 	assert.Equal(t, 4, len(New((*Person)(nil)).Methods()))
@@ -99,6 +103,7 @@ func TestNilStructPtr(t *testing.T) {
 }
 
 func TestListFieldsFlattened(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(p)
 
@@ -128,6 +133,7 @@ func TestListFieldsFlattened(t *testing.T) {
 }
 
 func TestListFields(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(p)
 
@@ -138,6 +144,7 @@ func TestListFields(t *testing.T) {
 }
 
 func TestListFieldsAll(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(p)
 
@@ -150,6 +157,7 @@ func TestListFieldsAll(t *testing.T) {
 }
 
 func TestListFieldsAnonymous(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(p)
 
@@ -159,6 +167,7 @@ func TestListFieldsAnonymous(t *testing.T) {
 }
 
 func TestListFieldsAllWithDoubleFields(t *testing.T) {
+	t.Parallel()
 	obj := New(Company{})
 
 	fields := obj.FieldsAll()
@@ -171,6 +180,7 @@ func TestListFieldsAllWithDoubleFields(t *testing.T) {
 }
 
 func TestFindDoubleFields(t *testing.T) {
+	t.Parallel()
 	obj := New(Company{})
 
 	fields := obj.FindDoubleFields()
@@ -179,6 +189,7 @@ func TestFindDoubleFields(t *testing.T) {
 }
 
 func TestListFieldsOnPointer(t *testing.T) {
+	t.Parallel()
 	p := &Person{}
 	obj := New(p)
 
@@ -204,6 +215,7 @@ func TestListFieldsOnPointer(t *testing.T) {
 }
 
 func TestListFieldsFlattenedOnPointer(t *testing.T) {
+	t.Parallel()
 	p := &Person{}
 	obj := New(p)
 
@@ -215,12 +227,14 @@ func TestListFieldsFlattenedOnPointer(t *testing.T) {
 }
 
 func TestNoFieldsNoCustomType(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, len(New(CustomType(1)).Fields()), 0)
 	ct := CustomType(2)
 	assert.Equal(t, len(New(&ct).Fields()), 0)
 }
 
 func TestIsStructForCustomTypes(t *testing.T) {
+	t.Parallel()
 	ct := CustomType(2)
 	assert.False(t, New(CustomType(1)).IsPtr())
 	assert.True(t, New(&ct).IsPtr())
@@ -229,6 +243,7 @@ func TestIsStructForCustomTypes(t *testing.T) {
 }
 
 func TestFieldValidity(t *testing.T) {
+	t.Parallel()
 	assert.False(t, New(CustomType(1)).Field("jkljkl").IsValid())
 	assert.False(t, New(Person{}).Field("street").IsValid())
 	assert.True(t, New(Person{}).Field("Street").IsValid())
@@ -237,6 +252,7 @@ func TestFieldValidity(t *testing.T) {
 }
 
 func TestSetFieldNonPointer(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(p)
 	assert.False(t, obj.IsPtr())
@@ -262,6 +278,7 @@ func TestSetFieldNonPointer(t *testing.T) {
 }
 
 func TestSetField(t *testing.T) {
+	t.Parallel()
 	p := Person{}
 	obj := New(&p)
 	assert.True(t, obj.IsPtr())
@@ -280,12 +297,14 @@ func TestSetField(t *testing.T) {
 }
 
 func TestCustomTypeMethods(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, len(New(CustomType(1)).Methods()), 1)
 	ct := CustomType(1)
 	assert.Equal(t, len(New(&ct).Methods()), 2)
 }
 
 func TestMethods(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, len(New(Person{}).Methods()), 3)
 	assert.Equal(t, len(New(&Person{}).Methods()), 4)
 
@@ -295,6 +314,7 @@ func TestMethods(t *testing.T) {
 }
 
 func TestCallMethod(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 	method := obj.Method("Add")
 	res, err := method.Call(2, 3, 6)
@@ -313,6 +333,7 @@ func TestCallMethod(t *testing.T) {
 }
 
 func TestCallInvalidMethod(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 	method := obj.Method("AddAdddd")
 	res, err := method.Call([]interface{}{2, 3, 6})
@@ -324,6 +345,7 @@ func TestCallInvalidMethod(t *testing.T) {
 }
 
 func TestMethodsValidityOnPtr(t *testing.T) {
+	t.Parallel()
 	ct := CustomType(1)
 	obj := New(&ct)
 
@@ -345,6 +367,7 @@ func TestMethodsValidityOnPtr(t *testing.T) {
 }
 
 func TestMethodsValidityOnNonPtr(t *testing.T) {
+	t.Parallel()
 	obj := New(CustomType(1))
 
 	assert.False(t, obj.IsPtr())
@@ -373,16 +396,19 @@ func testCallMethod(t *testing.T, callValue bool, lenResult int) bool {
 }
 
 func TestCallMethodWithoutErrResult(t *testing.T) {
+	t.Parallel()
 	isErr := testCallMethod(t, true, 3)
 	assert.True(t, isErr)
 }
 
 func TestCallMethodWithErrResult(t *testing.T) {
+	t.Parallel()
 	isErr := testCallMethod(t, false, 3)
 	assert.False(t, isErr)
 }
 
 func TestTag(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 	tag, err := obj.Field("Street").Tag("invalid")
 	assert.Nil(t, err)
@@ -390,6 +416,7 @@ func TestTag(t *testing.T) {
 }
 
 func TestInvalidTag(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 	tag, err := obj.Field("HahaStreet").Tag("invalid")
 	assert.NotNil(t, err)
@@ -398,6 +425,7 @@ func TestInvalidTag(t *testing.T) {
 }
 
 func TestValidTag(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 	tag, err := obj.Field("Street").Tag("tag")
 	assert.Nil(t, err)
@@ -405,6 +433,7 @@ func TestValidTag(t *testing.T) {
 }
 
 func TestValidTags(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 
 	tags, err := obj.Field("Street").TagExpanded("tag")
@@ -417,6 +446,7 @@ func TestValidTags(t *testing.T) {
 }
 
 func TestAllTags(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 
 	tags, err := obj.Field("Street").Tags()
@@ -427,6 +457,7 @@ func TestAllTags(t *testing.T) {
 }
 
 func TestNewFromType(t *testing.T) {
+	t.Parallel()
 	obj1 := NewFromType(reflect.TypeOf(Person{}))
 	obj2 := New(&Person{})
 
@@ -436,6 +467,7 @@ func TestNewFromType(t *testing.T) {
 }
 
 func TestAnonymousFields(t *testing.T) {
+	t.Parallel()
 	obj := New(&Person{})
 
 	assert.True(t, obj.Field("Address").IsAnonymous())
@@ -443,6 +475,7 @@ func TestAnonymousFields(t *testing.T) {
 }
 
 func TestNil(t *testing.T) {
+	t.Parallel()
 	obj := New(nil)
 	assert.Equal(t, 0, len(obj.Fields()))
 	assert.Equal(t, 0, len(obj.Methods()))
@@ -456,6 +489,7 @@ func TestNil(t *testing.T) {
 }
 
 func TestNilType(t *testing.T) {
+	t.Parallel()
 	obj := NewFromType(nil)
 	assert.Equal(t, 0, len(obj.Fields()))
 	assert.Equal(t, 0, len(obj.Methods()))
@@ -472,6 +506,7 @@ func TestNilType(t *testing.T) {
 }
 
 func TestStringObj(t *testing.T) {
+	t.Parallel()
 	obj := New("")
 	assert.Equal(t, 0, len(obj.Fields()))
 	assert.Equal(t, 0, len(obj.Methods()))
@@ -496,6 +531,7 @@ type TestWithInnerStruct struct {
 }
 
 func TestInnerStruct(t *testing.T) {
+	t.Parallel()
 	obj := New(TestWithInnerStruct{})
 	fields := obj.Fields()
 	assert.Equal(t, 2, len(fields))
@@ -514,6 +550,7 @@ func TestInnerStruct(t *testing.T) {
 }
 
 func TestExportedUnexported(t *testing.T) {
+	t.Parallel()
 	obj := New(&tmp.TestStruct{})
 	assert.Equal(t, "_", obj.Fields()[0].Name())
 	assert.False(t, obj.Fields()[0].IsExported())

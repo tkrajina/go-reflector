@@ -34,6 +34,7 @@ func performanceN(envN string) int {
 // N=1000000 go test -v ./... -run=TestPerformance
 // Iy you change anything here, change TestPerformance_plain too!
 func TestPerformance_reflection(t *testing.T) {
+	t.Parallel()
 	n := performanceN(os.Getenv("N"))
 	defer stopwatch(n, "WITH REFLECTION")()
 	for i := 0; i < n; i++ {
@@ -71,6 +72,7 @@ func TestPerformance_reflection(t *testing.T) {
 }
 
 func TestPerformance_plain(t *testing.T) {
+	t.Parallel()
 	n := performanceN(os.Getenv("N"))
 	defer stopwatch(n, "WITHOUT REFLECTION")()
 	for i := 0; i < n; i++ {

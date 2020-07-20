@@ -17,24 +17,19 @@ const (
 )
 
 var (
-	metadataCache map[reflect.Type]ObjMetadata
-	// # of metadata cached, just for testing, not threadsafe!
-	metadataCached int
+	metadataCache      map[reflect.Type]ObjMetadata
+	metadataCacheMutex sync.RWMutex
 )
 
 func init() {
 	metadataCache = map[reflect.Type]ObjMetadata{}
-	metadataCached = 0
 }
 
-var updateCacheMutex sync.Mutex
-
 func updateCache(ty reflect.Type, o *Obj) {
-	updateCacheMutex.Lock()
-	defer updateCacheMutex.Unlock()
+	metadataCacheMutex.Lock()
+	defer metadataCacheMutex.Unlock()
 
 	metadataCache[ty] = o.ObjMetadata
-	metadataCached++
 }
 
 // ObjMetadata contains data which is always unique per Type.
@@ -234,7 +229,10 @@ func New(obj interface{}) *Obj {
 	o := &Obj{iface: obj}
 
 	ty := reflect.TypeOf(obj)
-	if metadata, found := metadataCache[ty]; found {
+	metadataCacheMutex.RLock()
+	metadata, found := metadataCache[ty]
+	metadataCacheMutex.RUnlock()
+	if found {
 		o.ObjMetadata = metadata
 	} else {
 		o.ObjMetadata = *newObjMetadata(reflect.TypeOf(obj))

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func stopwatch(n int, title string) func() {
@@ -66,9 +64,6 @@ func TestPerformance_reflection(t *testing.T) {
 			t.Fatal("result should be 6")
 		}
 	}
-
-	assert.Equal(t, 1, metadataCached, "Only 1 metadata must be cached")
-	assert.Equal(t, 1, len(metadataCache), "Only 1 metadata must be cached")
 }
 
 func TestPerformance_plain(t *testing.T) {

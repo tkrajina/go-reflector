@@ -250,6 +250,80 @@ func (o *Obj) IsValid() bool {
 	return o.objKind != reflect.Invalid
 }
 
+// Len returns object length. Works for arrays, channels, maps, slices and strings.
+//
+// It doesn't panic for other types, returns 0 instead.
+//
+// In case the value is a pointer, len checks the underlying value.
+func (o *Obj) Len() int {
+	switch o.fieldsValue.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return o.fieldsValue.Len()
+	}
+	return 0
+}
+
+// GetByIndex returns a value by int index.
+//
+// Works for arrays, slices and strins. Won't panic when index or kind is invalid.
+func (o *Obj) GetByIndex(index int) (value interface{}, found bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			value = nil
+			found = false
+		}
+	}()
+
+	switch o.Kind() {
+	case reflect.Array, reflect.Slice, reflect.String:
+		if 0 <= index && index < o.fieldsValue.Len() {
+			value = o.fieldsValue.Index(index).Interface()
+			found = true
+			return
+		}
+	}
+	return
+}
+
+// Keys return map keys in unspecified order.
+func (o *Obj) Keys() ([]interface{}, error) {
+	switch o.fieldsValue.Kind() {
+	case reflect.Map:
+		keys := o.fieldsValue.MapKeys()
+		res := make([]interface{}, len(keys))
+		for n := range keys {
+			res[n] = keys[n].Interface()
+		}
+		return res, nil
+	}
+	return nil, fmt.Errorf("invalid type %s", o.Type().String())
+}
+
+// GetByKey returns a value by map key.
+//
+// Won't panic when key is invalid or kind is not map.
+func (o *Obj) GetByKey(key interface{}) (value interface{}, found bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			value = nil
+			found = false
+		}
+	}()
+
+	switch o.fieldsValue.Kind() {
+	case reflect.Map:
+		v := o.fieldsValue.MapIndex(reflect.ValueOf(key))
+		if !v.IsValid() {
+			found = false
+			return
+		}
+		value = v.Interface()
+		found = true
+		return
+	}
+	return
+}
+
 // Fields returns fields.
 // Don't list fields inside Anonymous fields as distinct fields.
 func (o *Obj) Fields() []ObjField {
@@ -388,7 +462,7 @@ func newObjField(obj *Obj, metadata ObjFieldMetadata) *ObjField {
 
 func (of *ObjField) assertValid() error {
 	if !of.IsValid() {
-		return fmt.Errorf("Invalid field %s", of.name)
+		return fmt.Errorf("invalid field %s", of.name)
 	}
 	return nil
 }
@@ -468,7 +542,7 @@ func (of *ObjField) Set(value interface{}) error {
 	}
 
 	if !of.IsSettable() {
-		return fmt.Errorf("Field %s in %T not settable", of.name, of.obj.iface)
+		return fmt.Errorf("field %s in %T not settable", of.name, of.obj.iface)
 	}
 
 	of.value.Set(reflect.ValueOf(value))
@@ -482,7 +556,7 @@ func (of *ObjField) Get() (interface{}, error) {
 		return nil, err
 	}
 	if !of.IsExported() {
-		return nil, fmt.Errorf("Cannot read unexported field %T.%s", of.obj.iface, of.name)
+		return nil, fmt.Errorf("cannot read unexported field %T.%s", of.obj.iface, of.name)
 	}
 
 	return of.value.Interface(), nil
@@ -553,10 +627,10 @@ func (om *ObjMethod) IsValid() bool {
 // Note that in the error returning value is not the error from the method call.
 func (om *ObjMethod) Call(args ...interface{}) (*CallResult, error) {
 	if !om.obj.IsValid() {
-		return nil, fmt.Errorf("Invalid object type %T for method %s", om.obj.iface, om.name)
+		return nil, fmt.Errorf("invalid object type %T for method %s", om.obj.iface, om.name)
 	}
 	if !om.IsValid() {
-		return nil, fmt.Errorf("Invalid method %s in %T", om.name, om.obj.iface)
+		return nil, fmt.Errorf("invalid method %s in %T", om.name, om.obj.iface)
 	}
 	in := make([]reflect.Value, len(args)+1)
 	in[0] = reflect.ValueOf(om.obj.iface)

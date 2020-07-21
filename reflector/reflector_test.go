@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -420,7 +421,7 @@ func TestInvalidTag(t *testing.T) {
 	obj := New(&Person{})
 	tag, err := obj.Field("HahaStreet").Tag("invalid")
 	assert.NotNil(t, err)
-	assert.Equal(t, "Invalid field HahaStreet", err.Error())
+	assert.Equal(t, "invalid field HahaStreet", err.Error())
 	assert.Equal(t, len(tag), 0)
 }
 
@@ -571,7 +572,7 @@ func TestExportedUnexported(t *testing.T) {
 	value, err := obj.Field("unexported").Get()
 	assert.NotNil(t, err)
 	assert.Nil(t, value)
-	assert.Contains(t, err.Error(), "Cannot read unexported field")
+	assert.Contains(t, err.Error(), "cannot read unexported field")
 
 	// But tags on unexported fields are still readable:
 	{
@@ -584,5 +585,96 @@ func TestExportedUnexported(t *testing.T) {
 		tags, err := obj.Field("unexported").Tags()
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(tags))
+	}
+}
+
+func TestLength(t *testing.T) {
+	{
+		assert.Equal(t, 0, New(&tmp.TestStruct{}).Len())
+		assert.Equal(t, 0, New(tmp.TestStruct{}).Len())
+
+		{
+			val, found := New(tmp.TestStruct{}).GetByIndex(20)
+			assert.False(t, found)
+			assert.Nil(t, val)
+		}
+		{
+			val, found := New(tmp.TestStruct{}).GetByKey("nothing")
+			assert.False(t, found)
+			assert.Equal(t, nil, val)
+		}
+		{
+			keys, err := New(tmp.TestStruct{}).Keys()
+			assert.Nil(t, keys)
+			assert.NotNil(t, err)
+		}
+	}
+	{
+		s := "jkljk"
+		assert.Equal(t, len(s), New(s).Len())
+		assert.Equal(t, len(s), New(&s).Len())
+	}
+	{
+		a := []int{1, 2, 3, 4, 8, 7, 6, 5}
+		assert.Equal(t, len(a), New(a).Len())
+		assert.Equal(t, len(a), New(&a).Len())
+
+		{
+			val, found := New(a).GetByIndex(2)
+			assert.True(t, found)
+			assert.Equal(t, val, 3)
+		}
+		{
+			val, found := New(a).GetByIndex(20)
+			assert.False(t, found)
+			assert.Nil(t, val)
+		}
+		{
+			val, found := New(a).GetByIndex(-20)
+			assert.False(t, found)
+			assert.Nil(t, val)
+		}
+	}
+	{
+		m := map[string]interface{}{"jkljk": 8, "11": 13, "12": nil}
+		assert.Equal(t, len(m), New(m).Len())
+		assert.Equal(t, len(m), New(&m).Len())
+
+		{
+			keys, err := New(&m).Keys()
+			assert.Nil(t, err)
+			assert.Equal(t, 3, len(keys))
+			keysStrings := make([]string, len(keys))
+			for n := range keys {
+				keysStrings[n] = keys[n].(string)
+			}
+			sort.Strings(keysStrings)
+			assert.Equal(t, []string{"11", "12", "jkljk"}, keysStrings)
+		}
+		{
+			val, found := New(&m).GetByKey("11")
+			assert.True(t, found)
+			assert.Equal(t, 13, val)
+		}
+		{
+			val, found := New(m).GetByKey("11")
+			assert.True(t, found)
+			assert.Equal(t, 13, val)
+		}
+		{
+			val, found := New(m).GetByKey("12")
+			assert.True(t, found)
+			assert.Equal(t, nil, val)
+		}
+		{
+			val, found := New(m).GetByKey("nothing")
+			assert.False(t, found)
+			assert.Equal(t, nil, val)
+		}
+		{
+			val, found := New(m).GetByKey(17)
+			assert.False(t, found)
+			assert.Equal(t, nil, val)
+		}
 	}
 }

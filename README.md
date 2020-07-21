@@ -4,8 +4,6 @@ First of all, don't use reflection if you don't have to.
 
 But if you really have to... This library offers a simplified Golang reflection abstraction.
 
-**This lib is still a work in progress**
-
 ## Getting and setting fields
 
 Let's suppose we have structs like:
@@ -107,6 +105,25 @@ If the method call returned an error, you can check it with:
     for _, method := range obj.Methods() {
         fmt.Println("Method", method.Name(), "with input types", method.InTypes(), "and output types", method.OutTypes())
     }
+
+## Getting length, getting and setting list/string/map elements
+
+Map:
+
+    m := map[string]interface{}{"aaa", 17}
+    o := reflector.New(m)
+    fmt.Println("Length", o.Len())
+    val, found := o.GetByKey("aaa")
+    o.SetByKey("bbb", "new value")
+    fmt.Println("keys:", o.Keys())
+
+Slice, string:
+
+    l := []int{1, 2, 3}
+    o := reflector.New(o)
+    fmt.Println("Length", o.Len())
+    val, found := o.GetByIndex(0)
+    o.SetByIndex(0, 19)
 
 ## Performance
 

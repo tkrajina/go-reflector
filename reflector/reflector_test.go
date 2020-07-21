@@ -588,37 +588,53 @@ func TestExportedUnexported(t *testing.T) {
 	}
 }
 
-func TestLength(t *testing.T) {
-	{
-		assert.Equal(t, 0, New(&tmp.TestStruct{}).Len())
-		assert.Equal(t, 0, New(tmp.TestStruct{}).Len())
+func TestStringLen(t *testing.T) {
+	s := "jkljk"
+	assert.Equal(t, len(s), New(s).Len())
+	assert.Equal(t, len(s), New(&s).Len())
+}
 
-		{
-			val, found := New(tmp.TestStruct{}).GetByIndex(20)
-			assert.False(t, found)
-			assert.Nil(t, val)
-		}
-		{
-			val, found := New(tmp.TestStruct{}).GetByKey("nothing")
-			assert.False(t, found)
-			assert.Equal(t, nil, val)
-		}
-		{
-			keys, err := New(tmp.TestStruct{}).Keys()
-			assert.Nil(t, keys)
-			assert.NotNil(t, err)
-		}
+func TestLenOfInvalidTypes(t *testing.T) {
+	assert.Equal(t, 0, New(&tmp.TestStruct{}).Len())
+	assert.Equal(t, 0, New(tmp.TestStruct{}).Len())
+
+	{
+		val, found := New(tmp.TestStruct{}).GetByIndex(20)
+		assert.False(t, found)
+		assert.Nil(t, val)
 	}
 	{
-		s := "jkljk"
-		assert.Equal(t, len(s), New(s).Len())
-		assert.Equal(t, len(s), New(&s).Len())
+		val, found := New(tmp.TestStruct{}).GetByKey("nothing")
+		assert.False(t, found)
+		assert.Equal(t, nil, val)
 	}
+	{
+		keys, err := New(tmp.TestStruct{}).Keys()
+		assert.Nil(t, keys)
+		assert.NotNil(t, err)
+	}
+}
+
+func TestSlice(t *testing.T) {
 	{
 		a := []int{1, 2, 3, 4, 8, 7, 6, 5}
 		assert.Equal(t, len(a), New(a).Len())
 		assert.Equal(t, len(a), New(&a).Len())
-
+		{
+			o := New(&a)
+			assert.Nil(t, o.SetByIndex(1, 1000))
+			assert.Equal(t, []int{1, 1000, 3, 4, 8, 7, 6, 5}, a)
+		}
+		{
+			o := New(&a)
+			assert.NotNil(t, o.SetByIndex(-1, 1000))
+			assert.NotNil(t, o.SetByIndex(700, 1000))
+		}
+		{
+			o := New(a)
+			assert.Nil(t, o.SetByIndex(1, 1000))
+			assert.Equal(t, []int{1, 1000, 3, 4, 8, 7, 6, 5}, a)
+		}
 		{
 			val, found := New(a).GetByIndex(2)
 			assert.True(t, found)
@@ -635,46 +651,62 @@ func TestLength(t *testing.T) {
 			assert.Nil(t, val)
 		}
 	}
-	{
-		m := map[string]interface{}{"jkljk": 8, "11": 13, "12": nil}
-		assert.Equal(t, len(m), New(m).Len())
-		assert.Equal(t, len(m), New(&m).Len())
+}
 
-		{
-			keys, err := New(&m).Keys()
-			assert.Nil(t, err)
-			assert.Equal(t, 3, len(keys))
-			keysStrings := make([]string, len(keys))
-			for n := range keys {
-				keysStrings[n] = keys[n].(string)
-			}
-			sort.Strings(keysStrings)
-			assert.Equal(t, []string{"11", "12", "jkljk"}, keysStrings)
+func TestMapLenGetSet(t *testing.T) {
+	m := map[string]interface{}{"jkljk": 8, "11": 13, "12": nil}
+	assert.Equal(t, len(m), New(m).Len())
+	assert.Equal(t, len(m), New(&m).Len())
+	{
+		keys, err := New(&m).Keys()
+		assert.Nil(t, err)
+		assert.Equal(t, 3, len(keys))
+		keysStrings := make([]string, len(keys))
+		for n := range keys {
+			keysStrings[n] = keys[n].(string)
 		}
-		{
-			val, found := New(&m).GetByKey("11")
-			assert.True(t, found)
-			assert.Equal(t, 13, val)
-		}
-		{
-			val, found := New(m).GetByKey("11")
-			assert.True(t, found)
-			assert.Equal(t, 13, val)
-		}
-		{
-			val, found := New(m).GetByKey("12")
-			assert.True(t, found)
-			assert.Equal(t, nil, val)
-		}
-		{
-			val, found := New(m).GetByKey("nothing")
-			assert.False(t, found)
-			assert.Equal(t, nil, val)
-		}
-		{
-			val, found := New(m).GetByKey(17)
-			assert.False(t, found)
-			assert.Equal(t, nil, val)
-		}
+		sort.Strings(keysStrings)
+		assert.Equal(t, []string{"11", "12", "jkljk"}, keysStrings)
 	}
+	{
+		val, found := New(&m).GetByKey("11")
+		assert.True(t, found)
+		assert.Equal(t, 13, val)
+	}
+	{
+		val, found := New(m).GetByKey("11")
+		assert.True(t, found)
+		assert.Equal(t, 13, val)
+	}
+	{
+		val, found := New(m).GetByKey("12")
+		assert.True(t, found)
+		assert.Equal(t, nil, val)
+	}
+	{
+		val, found := New(m).GetByKey("nothing")
+		assert.False(t, found)
+		assert.Equal(t, nil, val)
+	}
+	{
+		val, found := New(m).GetByKey(17)
+		assert.False(t, found)
+		assert.Equal(t, nil, val)
+	}
+
+}
+
+func TestMapSet(t *testing.T) {
+	m := map[string]interface{}{"jkljk": 8, "11": 13, "12": nil}
+	o := New(&m)
+	assert.Nil(t, o.SetByKey("17", 71))
+	val, found := m["17"]
+	assert.True(t, found)
+	assert.Equal(t, 71, val)
+}
+
+func TestSetStringByIndex(t *testing.T) {
+	s := "jkljkl"
+	o := New(&s)
+	assert.NotNil(t, o.SetByIndex(0, 'a'))
 }

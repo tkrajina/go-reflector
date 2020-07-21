@@ -285,6 +285,22 @@ func (o *Obj) GetByIndex(index int) (value interface{}, found bool) {
 	return
 }
 
+// SetByKey sets a slice value by key.
+func (o *Obj) SetByIndex(index int, val interface{}) error {
+	if index < 0 || o.Len() <= index {
+		return fmt.Errorf("cannot set element %d", index)
+	}
+
+	switch o.fieldsValue.Kind() { // Note, not string here!
+	case reflect.Array, reflect.Slice:
+		elem := o.fieldsValue.Index(index)
+		elem.Set(reflect.ValueOf(val))
+		return nil
+	default:
+		return fmt.Errorf("cannot set element %d of %s", index, o.fieldsValue.String())
+	}
+}
+
 // Keys return map keys in unspecified order.
 func (o *Obj) Keys() ([]interface{}, error) {
 	switch o.fieldsValue.Kind() {
@@ -295,8 +311,27 @@ func (o *Obj) Keys() ([]interface{}, error) {
 			res[n] = keys[n].Interface()
 		}
 		return res, nil
+	default:
+		return nil, fmt.Errorf("invalid type %s", o.Type().String())
 	}
-	return nil, fmt.Errorf("invalid type %s", o.Type().String())
+}
+
+// SetByKey sets a map value by key.
+func (o *Obj) SetByKey(key interface{}, val interface{}) (err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			err = fmt.Errorf("cannot set key %s: %w", key, err)
+		}
+	}()
+
+	switch o.fieldsValue.Kind() {
+	case reflect.Map:
+		o.fieldsValue.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(val))
+		return
+	}
+
+	err = fmt.Errorf("cannot set key %s: %w", key, err)
+	return
 }
 
 // GetByKey returns a value by map key.

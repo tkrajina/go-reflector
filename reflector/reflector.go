@@ -263,6 +263,36 @@ func (o *Obj) Len() int {
 	return 0
 }
 
+// IsGettableByIndex returns true if underlying type is array, slice or string
+func (o *Obj) IsGettableByIndex() bool {
+	switch o.fieldsValue.Kind() {
+	case reflect.Array, reflect.Slice, reflect.String:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsSettableByIndex returns true if underlying type is array, slice (but not string, since they are immutable)
+func (o *Obj) IsSettableByIndex() bool {
+	switch o.fieldsValue.Kind() {
+	case reflect.Array, reflect.Slice:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsMap returns true if underlying type is map or a pointer to a map
+func (o *Obj) IsMap() bool {
+	switch o.fieldsValue.Kind() {
+	case reflect.Map:
+		return true
+	default:
+		return false
+	}
+}
+
 // GetByIndex returns a value by int index.
 //
 // Works for arrays, slices and strins. Won't panic when index or kind is invalid.
@@ -274,14 +304,14 @@ func (o *Obj) GetByIndex(index int) (value interface{}, found bool) {
 		}
 	}()
 
-	switch o.Kind() {
-	case reflect.Array, reflect.Slice, reflect.String:
+	if o.IsGettableByIndex() {
 		if 0 <= index && index < o.fieldsValue.Len() {
 			value = o.fieldsValue.Index(index).Interface()
 			found = true
 			return
 		}
 	}
+
 	return
 }
 
@@ -291,29 +321,26 @@ func (o *Obj) SetByIndex(index int, val interface{}) error {
 		return fmt.Errorf("cannot set element %d", index)
 	}
 
-	switch o.fieldsValue.Kind() { // Note, not string here!
-	case reflect.Array, reflect.Slice:
+	if o.IsSettableByIndex() {
 		elem := o.fieldsValue.Index(index)
 		elem.Set(reflect.ValueOf(val))
 		return nil
-	default:
-		return fmt.Errorf("cannot set element %d of %s", index, o.fieldsValue.String())
 	}
+
+	return fmt.Errorf("cannot set element %d of %s", index, o.fieldsValue.String())
 }
 
 // Keys return map keys in unspecified order.
 func (o *Obj) Keys() ([]interface{}, error) {
-	switch o.fieldsValue.Kind() {
-	case reflect.Map:
+	if o.IsMap() {
 		keys := o.fieldsValue.MapKeys()
 		res := make([]interface{}, len(keys))
 		for n := range keys {
 			res[n] = keys[n].Interface()
 		}
 		return res, nil
-	default:
-		return nil, fmt.Errorf("invalid type %s", o.Type().String())
 	}
+	return nil, fmt.Errorf("invalid type %s", o.Type().String())
 }
 
 // SetByKey sets a map value by key.
@@ -324,12 +351,10 @@ func (o *Obj) SetByKey(key interface{}, val interface{}) (err error) {
 		}
 	}()
 
-	switch o.fieldsValue.Kind() {
-	case reflect.Map:
+	if o.IsMap() {
 		o.fieldsValue.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(val))
 		return
 	}
-
 	err = fmt.Errorf("cannot set key %s: %w", key, err)
 	return
 }
@@ -345,8 +370,7 @@ func (o *Obj) GetByKey(key interface{}) (value interface{}, found bool) {
 		}
 	}()
 
-	switch o.fieldsValue.Kind() {
-	case reflect.Map:
+	if o.IsMap() {
 		v := o.fieldsValue.MapIndex(reflect.ValueOf(key))
 		if !v.IsValid() {
 			found = false

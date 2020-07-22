@@ -106,7 +106,7 @@ If the method call returned an error, you can check it with:
         fmt.Println("Method", method.Name(), "with input types", method.InTypes(), "and output types", method.OutTypes())
     }
 
-## Getting length, getting and setting list/string/map elements
+## Getting length, getting and setting slice/array/string/map elements
 
 Map:
 

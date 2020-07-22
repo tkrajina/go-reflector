@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// ParseTag parses a golang struct tag into a map.
 func ParseTag(tag string) (map[string]string, error) {
 	res := map[string]string{}
 

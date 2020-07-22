@@ -26,7 +26,7 @@ func (p *Person) Substract(a, b int) int { return a - b }
 func (p Person) ReturnsError(err bool) (string, *int, error) {
 	i := 2
 	if err {
-		return "", nil, errors.New("Error here!")
+		return "", nil, errors.New("error here")
 	}
 	return "jen", &i, nil
 }

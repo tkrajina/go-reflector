@@ -285,7 +285,7 @@ func (o *Obj) GetByIndex(index int) (value interface{}, found bool) {
 	return
 }
 
-// SetByKey sets a slice value by key.
+// SetByIndex sets a slice value by key.
 func (o *Obj) SetByIndex(index int, val interface{}) error {
 	if index < 0 || o.Len() <= index {
 		return fmt.Errorf("cannot set element %d", index)
@@ -319,8 +319,8 @@ func (o *Obj) Keys() ([]interface{}, error) {
 // SetByKey sets a map value by key.
 func (o *Obj) SetByKey(key interface{}, val interface{}) (err error) {
 	defer func() {
-		if err := recover(); err != nil {
-			err = fmt.Errorf("cannot set key %s: %w", key, err)
+		if e := recover(); e != nil {
+			err = fmt.Errorf("cannot set key %s: %v", key, e)
 		}
 	}()
 
@@ -561,6 +561,7 @@ func (of *ObjField) IsAnonymous() bool {
 	return field.Anonymous
 }
 
+// IsExported returns true if the name starts with uppercase (i.e. field is public).
 func (of *ObjField) IsExported() bool {
 	return of.structField.PkgPath == ""
 }

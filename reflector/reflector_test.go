@@ -21,8 +21,8 @@ type Person struct {
 	Address
 }
 
-func (p Person) Add(a, b, c int) int     { return a + b + c }
-func (p *Person) Substract(a, b int) int { return a - b }
+func (p Person) Add(a, b, c int) int    { return a + b + c }
+func (p *Person) Subtract(a, b int) int { return a - b }
 func (p Person) ReturnsError(err bool) (string, *int, error) {
 	i := 2
 	if err {

@@ -526,7 +526,7 @@ func (of *ObjField) assertValid() error {
 	return nil
 }
 
-// IsValid checks if the fiels is valid.
+// IsValid checks if the fields is valid.
 func (of *ObjField) IsValid() bool {
 	return of.valid && of.value.IsValid()
 }

@@ -455,6 +455,17 @@ func TestAllTags(t *testing.T) {
 	assert.Equal(t, len(tags), 2)
 	assert.Equal(t, tags["tag"], "be")
 	assert.Equal(t, tags["tag2"], "1,2,3")
+
+	/*
+			type Address struct {
+			Street string `tag:"be" tag2:"1,2,3"`
+			Number int    `tag:"bi"`
+		}
+	*/
+	fld := New(Address{}).Field("Street")
+	tagsStr, err := fld.TagsString()
+	assert.Nil(t, err)
+	assert.Equal(t, `tag:"be" tag2:"1,2,3"`, tagsStr)
 }
 
 func TestNewFromType(t *testing.T) {
@@ -709,4 +720,21 @@ func TestSetStringByIndex(t *testing.T) {
 	s := "jkljkl"
 	o := New(&s)
 	assert.NotNil(t, o.SetByIndex(0, 'a'))
+}
+
+func TestWalk(t *testing.T) {
+	t.Parallel()
+
+	s := struct {
+		String      string
+		PtrToString *string
+		Map         map[string]int
+		PtrToMap    *map[string]int
+		Slice       []string
+		PtrToSlice  *[]string
+		Array       [2]int
+		PtrToArray  *[2]int
+		Struct      struct{ Name string }
+	}{}
+	_ = s
 }

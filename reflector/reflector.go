@@ -565,6 +565,15 @@ func (of *ObjField) Tags() (map[string]string, error) {
 	return ParseTag(string(tag))
 }
 
+// TagsString returns the complete tags string (everything inside ``)
+func (of *ObjField) TagsString() (string, error) {
+	if err := of.assertValid(); err != nil {
+		return "", err
+	}
+
+	return string(of.structField.Tag), nil
+}
+
 // TagExpanded returns the tag value "expanded" with commas.
 func (of *ObjField) TagExpanded(tag string) ([]string, error) {
 	if err := of.assertValid(); err != nil {

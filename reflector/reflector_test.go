@@ -738,3 +738,20 @@ func TestWalk(t *testing.T) {
 	}{}
 	_ = s
 }
+
+func TestDereferencedIface(t *testing.T) {
+	t.Parallel()
+
+	ptrPerson := &Person{Name: "aaa"}
+	for _, i := range []interface{}{
+		Person{Name: "aaa"},
+		&Person{Name: "aaa"},
+		&ptrPerson,
+	} {
+		fmt.Printf("type %T:\n", i)
+		o := New(i)
+		p := o.Dereferenced()
+		_, is := p.(Person)
+		assert.True(t, is, "found %T", p)
+	}
+}

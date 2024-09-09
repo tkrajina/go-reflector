@@ -450,6 +450,14 @@ func (o Obj) IsPtr() bool {
 	return o.objKind == reflect.Ptr
 }
 
+func (o Obj) Dereferenced() interface{} {
+	val := o.fieldsValue
+	for val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	return val.Interface()
+}
+
 // Field get a field wrapper.
 // Note that the field name can be invalid.
 // You can check the field validity using ObjField.IsValid().
@@ -565,7 +573,7 @@ func (of *ObjField) Tags() (map[string]string, error) {
 	return ParseTag(string(tag))
 }
 
-// TagsString returns the complete tags string (everything inside ``)
+// TagsString returns the complete tags string (everything inside “)
 func (of *ObjField) TagsString() (string, error) {
 	if err := of.assertValid(); err != nil {
 		return "", err
